@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
+
 from meeting_note.compile.labels import (
     DYNAMICS_RELATION_LABELS,
     MEETING_TYPE_LABELS,
@@ -11,8 +14,9 @@ from meeting_note.compile.labels import (
 from meeting_note.models import AgendaStatus, MeetingNote
 
 
-def render_markdown(note: MeetingNote) -> str:
+def render_markdown(note: MeetingNote, *, tz: str = "Asia/Tokyo") -> str:
     """Render a MeetingNote as Markdown."""
+    zi = ZoneInfo(tz)
     lines: list[str] = []
 
     # Header
@@ -141,7 +145,8 @@ def render_markdown(note: MeetingNote) -> str:
     if note.metadata.generated_by:
         generated_at = ""
         if note.metadata.generated_at:
-            generated_at = f" ({note.metadata.generated_at.strftime('%Y-%m-%d %H:%M:%S UTC')})"
+            local_dt = note.metadata.generated_at.astimezone(zi)
+            generated_at = f" ({local_dt.strftime('%Y-%m-%d %H:%M:%S')})"
         lines.append(f"*{note.metadata.generated_by} により自動生成{generated_at}*")
         lines.append("")
 

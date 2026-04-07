@@ -78,7 +78,8 @@ def ingest(audio: str | None, transcript: str | None, output: str, project: str,
 @click.argument("input_file", type=click.Path(exists=True))
 @click.option("--format", "-f", "fmt", type=click.Choice(["markdown", "html"]), default="markdown", help="Output format")
 @click.option("--output", "-o", default="", help="Output file path")
-def compile(input_file: str, fmt: str, output: str) -> None:
+@click.option("--timezone", "-z", default="Asia/Tokyo", help="Timezone for display (IANA name)")
+def compile(input_file: str, fmt: str, output: str, timezone: str) -> None:
     """Compile structured JSON into Markdown or HTML."""
     input_path = Path(input_file)
 
@@ -88,10 +89,10 @@ def compile(input_file: str, fmt: str, output: str) -> None:
         raise click.ClickException(f"Failed to parse {input_file}: {e}") from e
 
     if fmt == "html":
-        content = render_html(note)
+        content = render_html(note, tz=timezone)
         default_ext = ".html"
     else:
-        content = render_markdown(note)
+        content = render_markdown(note, tz=timezone)
         default_ext = ".md"
 
     if not output:

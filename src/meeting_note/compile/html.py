@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 from jinja2 import Environment, FileSystemLoader
 
@@ -17,8 +18,9 @@ from meeting_note.models import AgendaStatus, MeetingNote
 _TEMPLATE_DIR = Path(__file__).parent / "templates"
 
 
-def render_html(note: MeetingNote, *, lang: str = "ja") -> str:
+def render_html(note: MeetingNote, *, lang: str = "ja", tz: str = "Asia/Tokyo") -> str:
     """Render a MeetingNote as self-contained HTML."""
+    zi = ZoneInfo(tz)
     env = Environment(
         loader=FileSystemLoader(str(_TEMPLATE_DIR)),
         autoescape=True,
@@ -35,7 +37,8 @@ def render_html(note: MeetingNote, *, lang: str = "ja") -> str:
 
     generated_at = ""
     if note.metadata.generated_at:
-        generated_at = note.metadata.generated_at.strftime("%Y-%m-%d %H:%M:%S UTC")
+        local_dt = note.metadata.generated_at.astimezone(zi)
+        generated_at = local_dt.strftime("%Y-%m-%d %H:%M:%S")
 
     return template.render(
         note=note,
