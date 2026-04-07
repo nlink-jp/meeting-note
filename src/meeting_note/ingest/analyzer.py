@@ -25,6 +25,7 @@ def analyze_meeting(
     *,
     transcript: str | None = None,
     audio_path: str | None = None,
+    known_participants: list[str] | None = None,
     client: GeminiClient,
     config: GeminiConfig,
 ) -> MeetingNote:
@@ -53,6 +54,12 @@ def analyze_meeting(
         user_prompt_parts.append("Analyze this meeting from the provided audio recording.")
     else:
         user_prompt_parts.append("Analyze this meeting from the transcript below.")
+
+    if known_participants:
+        names = ", ".join(known_participants)
+        user_prompt_parts.append("")
+        user_prompt_parts.append(f"Known participants: {names}")
+        user_prompt_parts.append("Use these names to help identify speakers in the meeting.")
 
     if sanitized_text:
         user_prompt_parts.append("")

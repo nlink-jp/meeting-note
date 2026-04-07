@@ -125,6 +125,35 @@ class TestAnalyzeMeeting:
 
         mock_client.delete_file.assert_called_once_with(uploaded_file)
 
+    def test_known_participants_in_prompt(self) -> None:
+        mock_client = MagicMock()
+        mock_client.complete_structured.return_value = SAMPLE_LLM_RESPONSE.model_copy(deep=True)
+
+        config = GeminiConfig(project="test-project")
+        analyze_meeting(
+            transcript="some text",
+            known_participants=["Tanaka", "Sato"],
+            client=mock_client,
+            config=config,
+        )
+
+        call_args = mock_client.complete_structured.call_args
+        user_prompt = call_args.args[1]
+        assert "Tanaka" in user_prompt
+        assert "Sato" in user_prompt
+        assert "Known participants" in user_prompt
+
+    def test_no_participants_hint_when_empty(self) -> None:
+        mock_client = MagicMock()
+        mock_client.complete_structured.return_value = SAMPLE_LLM_RESPONSE.model_copy(deep=True)
+
+        config = GeminiConfig(project="test-project")
+        analyze_meeting(transcript="some text", client=mock_client, config=config)
+
+        call_args = mock_client.complete_structured.call_args
+        user_prompt = call_args.args[1]
+        assert "Known participants" not in user_prompt
+
     def test_no_delete_when_no_audio(self) -> None:
         mock_client = MagicMock()
         mock_client.complete_structured.return_value = SAMPLE_LLM_RESPONSE.model_copy(deep=True)

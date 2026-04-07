@@ -31,7 +31,8 @@ def main() -> None:
 @click.option("--project", default="", help="GCP project ID (overrides env)")
 @click.option("--location", default="", help="GCP location (overrides env)")
 @click.option("--model", default="", help="Gemini model name (overrides env)")
-def ingest(audio: str | None, transcript: str | None, output: str, project: str, location: str, model: str) -> None:
+@click.option("--known-participants", "-p", default="", help="Comma-separated participant names as hints (e.g. 'Tanaka,Sato,Suzuki')")
+def ingest(audio: str | None, transcript: str | None, output: str, project: str, location: str, model: str, known_participants: str) -> None:
     """Extract structured meeting data from audio and/or transcript."""
     if not audio and not transcript:
         raise click.UsageError("At least one of --audio or --transcript is required.")
@@ -50,9 +51,15 @@ def ingest(audio: str | None, transcript: str | None, output: str, project: str,
     # Create client and analyze
     err.print("Analyzing meeting via Gemini...")
     client = GeminiClient(config)
+    # Parse participant hints
+    participants: list[str] = []
+    if known_participants:
+        participants = [p.strip() for p in known_participants.split(",") if p.strip()]
+
     note = analyze_meeting(
         transcript=transcript_text,
         audio_path=audio,
+        known_participants=participants,
         client=client,
         config=config,
     )
