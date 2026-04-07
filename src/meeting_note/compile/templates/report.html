@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ note.title }}</title>
+<style>
+:root {
+  --color-bg: #ffffff;
+  --color-text: #1a1a2e;
+  --color-muted: #6b7280;
+  --color-border: #e5e7eb;
+  --color-card-bg: #f9fafb;
+  --color-decided: #059669;
+  --color-decided-bg: #ecfdf5;
+  --color-pending: #d97706;
+  --color-pending-bg: #fffbeb;
+  --color-rejected: #dc2626;
+  --color-rejected-bg: #fef2f2;
+  --color-info: #6366f1;
+  --color-info-bg: #eef2ff;
+  --color-why-bg: #f0f9ff;
+  --color-why-border: #0284c7;
+  --gap: 1rem;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: var(--color-text);
+  background: var(--color-bg);
+  line-height: 1.6;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 2rem var(--gap);
+}
+h1 { font-size: 1.75rem; margin-bottom: 0.5rem; }
+h2 { font-size: 1.35rem; margin: 1.5rem 0 0.75rem; border-bottom: 2px solid var(--color-border); padding-bottom: 0.25rem; }
+h3 { font-size: 1.1rem; margin: 1rem 0 0.5rem; }
+h4 { font-size: 0.95rem; margin: 0.75rem 0 0.25rem; color: var(--color-muted); }
+.meta { color: var(--color-muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
+.meta span { margin-right: 1.5rem; }
+table { width: 100%; border-collapse: collapse; margin: 0.5rem 0 1rem; font-size: 0.9rem; }
+th, td { padding: 0.5rem 0.75rem; text-align: left; border: 1px solid var(--color-border); }
+th { background: var(--color-card-bg); font-weight: 600; }
+.badge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  vertical-align: middle;
+}
+.badge-decided { color: var(--color-decided); background: var(--color-decided-bg); }
+.badge-pending { color: var(--color-pending); background: var(--color-pending-bg); }
+.badge-rejected { color: var(--color-rejected); background: var(--color-rejected-bg); }
+.badge-informational { color: var(--color-info); background: var(--color-info-bg); }
+.agenda-card {
+  background: var(--color-card-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: var(--gap);
+  margin: var(--gap) 0;
+}
+.agenda-header { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; }
+.agenda-header h3 { margin: 0; flex: 1; }
+.agenda-body { margin-top: var(--gap); }
+.why-box {
+  background: var(--color-why-bg);
+  border-left: 4px solid var(--color-why-border);
+  padding: 0.75rem 1rem;
+  margin: 0.5rem 0;
+  border-radius: 0 4px 4px 0;
+}
+.why-box strong { color: var(--color-why-border); }
+.alt-rejected { text-decoration: line-through; color: var(--color-muted); }
+.decision-block { margin: 0.75rem 0; }
+ul, ol { padding-left: 1.5rem; margin: 0.25rem 0; }
+li { margin: 0.25rem 0; }
+.takeaways li { margin: 0.5rem 0; }
+.footer { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--color-border); color: var(--color-muted); font-size: 0.8rem; }
+@media print {
+  body { max-width: 100%; padding: 1rem; }
+  .agenda-body { display: block !important; }
+  .toggle-icon { display: none; }
+}
+@media (max-width: 640px) {
+  body { padding: 1rem 0.5rem; }
+  table { font-size: 0.8rem; }
+  th, td { padding: 0.35rem 0.5rem; }
+}
+</style>
+</head>
+<body>
+
+<h1>{{ note.title }}</h1>
+<div class="meta">
+  <span>{{ note.date | format_date }}</span>
+  {% if note.duration_seconds %}<span>{{ note.duration_seconds | duration_min }} min</span>{% endif %}
+  {% if note.meeting_type %}<span>{{ note.meeting_type.value }}</span>{% endif %}
+  {% if note.context %}<span>{{ note.context }}</span>{% endif %}
+</div>
+
+{% if note.participants %}
+<h2>Participants</h2>
+<table>
+  <thead><tr><th>Name</th><th>Role</th><th>Affiliation</th></tr></thead>
+  <tbody>
+  {% for p in note.participants %}
+    <tr>
+      <td>{{ p.name }}</td>
+      <td>{{ p.role.value if p.role else "" }}</td>
+      <td>{{ p.affiliation }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+{% if note.participant_dynamics %}
+<h2>Participant Dynamics</h2>
+<table>
+  <thead><tr><th>From</th><th>To</th><th>Relation</th><th>Topic</th><th>Detail</th></tr></thead>
+  <tbody>
+  {% for d in note.participant_dynamics %}
+    <tr>
+      <td>{{ d.from_name }}</td>
+      <td>{{ d.to_name }}</td>
+      <td>{{ d.relation.value }}</td>
+      <td>{{ d.topic }}</td>
+      <td>{{ d.detail }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+{% if note.agenda %}
+<h2>Agenda</h2>
+{% for item in note.agenda %}
+<div class="agenda-card">
+  <div class="agenda-header" onclick="this.parentElement.querySelector('.agenda-body').style.display = this.parentElement.querySelector('.agenda-body').style.display === 'none' ? 'block' : 'none'">
+    <h3>{{ loop.index }}. {{ item.title }}</h3>
+    <span class="badge badge-{{ item.status.value }}">{{ item.status.value }}</span>
+    <span class="toggle-icon">&#9660;</span>
+  </div>
+  <div class="agenda-body">
+    {% if item.summary %}<p>{{ item.summary }}</p>{% endif %}
+    {% if item.speakers %}<p><strong>Speakers</strong>: {{ item.speakers | join(", ") }}</p>{% endif %}
+
+    {% if item.discussion_points %}
+    <h4>Discussion Points</h4>
+    <ul>
+      {% for point in item.discussion_points %}
+      <li>{{ point }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+
+    {% if item.decisions %}
+    <h4>Decisions</h4>
+    {% for decision in item.decisions %}
+    <div class="decision-block">
+      <p><strong>{{ decision.what }}</strong></p>
+      {% if decision.why %}
+      <div class="why-box">
+        <strong>Why:</strong> {{ decision.why }}
+      </div>
+      {% endif %}
+      {% if decision.alternatives_considered %}
+      <p><strong>Alternatives considered:</strong></p>
+      <ul>
+        {% for alt in decision.alternatives_considered %}
+        <li><span class="alt-rejected">{{ alt.option }}</span> &mdash; {{ alt.rejected_because }}</li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+      {% if decision.decided_by %}
+      <p><strong>Decided by:</strong> {{ decision.decided_by | join(", ") }}</p>
+      {% endif %}
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    {% if item.action_items %}
+    <h4>Action Items</h4>
+    <table>
+      <thead><tr><th>Owner</th><th>Task</th><th>Due</th><th>Context</th></tr></thead>
+      <tbody>
+      {% for ai in item.action_items %}
+        <tr>
+          <td>{{ ai.owner }}</td>
+          <td>{{ ai.task }}</td>
+          <td>{{ ai.due }}</td>
+          <td>{{ ai.context }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+
+    {% if item.unresolved %}
+    <h4>Unresolved</h4>
+    <table>
+      <thead><tr><th>Issue</th><th>Blocker</th><th>Carry Forward</th></tr></thead>
+      <tbody>
+      {% for u in item.unresolved %}
+        <tr>
+          <td>{{ u.issue }}</td>
+          <td>{{ u.blocker }}</td>
+          <td>{{ u.carry_forward_to }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+  </div>
+</div>
+{% endfor %}
+{% endif %}
+
+{% if note.key_takeaways %}
+<h2>Key Takeaways</h2>
+<ul class="takeaways">
+  {% for t in note.key_takeaways %}
+  <li>{{ t }}</li>
+  {% endfor %}
+</ul>
+{% endif %}
+
+<div class="footer">
+  {% if note.metadata.generated_by %}
+    Generated by {{ note.metadata.generated_by }}{% if generated_at %} at {{ generated_at }}{% endif %}
+  {% endif %}
+</div>
+
+</body>
+</html>
