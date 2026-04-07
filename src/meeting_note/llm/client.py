@@ -90,6 +90,7 @@ class GeminiClient:
         """Call Gemini API with exponential backoff on rate limit errors."""
         config = types.GenerateContentConfig(
             system_instruction=system_prompt,
+            temperature=0.2,
         )
         if response_mime_type:
             config.response_mime_type = response_mime_type
