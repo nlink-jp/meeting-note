@@ -101,6 +101,95 @@ class TestLoadJson:
             load_transcript(f)
 
 
+class TestEdgeCases:
+    """Edge cases: empty files, broken formats, encoding issues."""
+
+    def test_empty_txt(self, tmp_path: Path) -> None:
+        f = tmp_path / "empty.txt"
+        f.write_text("", encoding="utf-8")
+        result = load_transcript(f)
+        assert result == ""
+
+    def test_empty_srt(self, tmp_path: Path) -> None:
+        f = tmp_path / "empty.srt"
+        f.write_text("", encoding="utf-8")
+        result = load_transcript(f)
+        assert result == ""
+
+    def test_empty_vtt(self, tmp_path: Path) -> None:
+        f = tmp_path / "empty.vtt"
+        f.write_text("WEBVTT\n\n", encoding="utf-8")
+        result = load_transcript(f)
+        assert result == ""
+
+    def test_srt_timing_only(self, tmp_path: Path) -> None:
+        """SRT with timing lines but no text content."""
+        f = tmp_path / "timing-only.srt"
+        f.write_text(
+            "1\n00:00:01,000 --> 00:00:03,000\n\n"
+            "2\n00:00:04,000 --> 00:00:06,000\n\n",
+            encoding="utf-8",
+        )
+        result = load_transcript(f)
+        assert result == ""
+
+    def test_vtt_timing_only(self, tmp_path: Path) -> None:
+        """VTT with header and timing but no cue text."""
+        f = tmp_path / "timing-only.vtt"
+        f.write_text(
+            "WEBVTT\n\n00:00:01.000 --> 00:00:03.000\n\n",
+            encoding="utf-8",
+        )
+        result = load_transcript(f)
+        assert result == ""
+
+    def test_broken_json(self, tmp_path: Path) -> None:
+        f = tmp_path / "broken.json"
+        f.write_text("{invalid json", encoding="utf-8")
+        with pytest.raises(ValueError, match="Invalid JSON"):
+            load_transcript(f)
+
+    def test_empty_json_array(self, tmp_path: Path) -> None:
+        f = tmp_path / "empty.json"
+        f.write_text("[]", encoding="utf-8")
+        with pytest.raises(ValueError, match="Empty JSON array"):
+            load_transcript(f)
+
+    def test_json_null(self, tmp_path: Path) -> None:
+        f = tmp_path / "null.json"
+        f.write_text("null", encoding="utf-8")
+        with pytest.raises(ValueError, match="Cannot extract transcript"):
+            load_transcript(f)
+
+    def test_json_bare_string(self, tmp_path: Path) -> None:
+        f = tmp_path / "bare.json"
+        f.write_text('"just a string"', encoding="utf-8")
+        with pytest.raises(ValueError, match="Cannot extract transcript"):
+            load_transcript(f)
+
+    def test_bom_utf8_txt(self, tmp_path: Path) -> None:
+        """UTF-8 BOM should not corrupt content."""
+        f = tmp_path / "bom.txt"
+        f.write_bytes(b"\xef\xbb\xbfHello BOM")
+        result = load_transcript(f)
+        assert "Hello BOM" in result
+
+    def test_srt_with_html_tags(self, tmp_path: Path) -> None:
+        """SRT with HTML formatting tags (common in real files)."""
+        f = tmp_path / "tagged.srt"
+        f.write_text(
+            "1\n00:00:01,000 --> 00:00:03,000\n<i>Italic text</i>\n\n",
+            encoding="utf-8",
+        )
+        result = load_transcript(f)
+        assert "<i>Italic text</i>" in result
+
+    def test_file_not_found(self, tmp_path: Path) -> None:
+        f = tmp_path / "nonexistent.txt"
+        with pytest.raises(FileNotFoundError):
+            load_transcript(f)
+
+
 class TestUnsupportedFormat:
     def test_pdf_raises(self, tmp_path: Path) -> None:
         f = tmp_path / "transcript.pdf"

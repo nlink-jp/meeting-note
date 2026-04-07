@@ -68,7 +68,15 @@ def _load_vtt(path: Path) -> str:
 
 def _load_json(path: Path) -> str:
     """Load transcript from JSON — supports common formats."""
-    data = json.loads(path.read_text(encoding="utf-8"))
+    raw = path.read_text(encoding="utf-8")
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Invalid JSON in {path}: {e}") from e
+
+    # Empty array
+    if isinstance(data, list) and not data:
+        raise ValueError(f"Empty JSON array in {path}")
 
     # Array of objects with "text" key
     if isinstance(data, list) and data and isinstance(data[0], dict):
