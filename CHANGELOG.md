@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [0.1.0] - Unreleased
+## [0.1.0] - 2026-04-08
 
 ### Added
 
@@ -14,10 +14,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   - Supports transcript files (txt, srt, vtt, json) with format auto-detection
   - Prompt injection defense with nonce-tagged XML wrapping
   - Structured JSON output with MeetingNote schema
+  - Raw transcript preservation (`raw_transcript` field)
+  - Per-agenda utterance extraction with speaker attribution
 - `compile` command: generate documents from structured JSON
-  - Markdown output with tables, decision rationale, status labels
-  - Self-contained HTML with inline CSS/JS, status badges, collapsible agenda
+  - Markdown output with Japanese-localized labels, decision rationale, status labels
+  - Self-contained HTML with inline CSS/JS, status badges, collapsible agenda cards
+  - Timezone-aware timestamp display (default: Asia/Tokyo)
 - Pydantic data models with field validators for LLM output normalization
 - Gemini LLM client with structured output parsing and retry with exponential backoff
 - Configuration management via `MEETING_NOTE_*` environment variables (ADC auth)
-- Design documents: planning.md, schema.json
+- Data format specification and architecture documentation (en/ja)
+
+### Security
+
+- Nonce-tagged XML wrapping for prompt injection defense
+- Immediate deletion of uploaded audio files after Gemini processing
+- 14-pattern injection detection with warning logs

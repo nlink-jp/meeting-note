@@ -41,9 +41,11 @@ src/meeting_note/
 2. **Prompt injection defense**: ALL user-sourced text (transcripts, audio
    transcriptions) MUST be processed through `sanitizer.sanitize_for_llm()`
    before LLM prompts. Uses nonce-tagged XML wrapping to isolate untrusted data.
-3. **No secret logging**: API keys, tokens, and credentials must never appear
+3. **Uploaded file cleanup**: Audio files uploaded to Gemini Files API MUST be
+   deleted immediately after processing (in a `finally` block).
+4. **No secret logging**: API keys, tokens, and credentials must never appear
    in logs or output.
-4. **Input validation**: All input files are validated against Pydantic models.
+5. **Input validation**: All input files are validated against Pydantic models.
 
 ## Development Rules
 
@@ -63,6 +65,7 @@ Configure via environment variables (or `.env` file):
 MEETING_NOTE_PROJECT=your-gcp-project-id    # Required
 MEETING_NOTE_LOCATION=us-central1           # Default
 MEETING_NOTE_MODEL=gemini-2.5-flash         # Default
+MEETING_NOTE_TIMEZONE=Asia/Tokyo            # Default
 ```
 
 Authentication: Application Default Credentials (ADC).
