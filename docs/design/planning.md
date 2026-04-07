@@ -73,10 +73,16 @@ Key elements:
 - Structured JSON → self-contained HTML
 - Template system
 
-### Phase 3: Storage + Embedding (future)
-- SQLite schema, JSON storage, normalized tables
-- Gemini embedding API, vector storage
-- Semantic search, meeting similarity
+### ~~Phase 3: Storage + Embedding~~ (cancelled)
+
+Cancelled — semantic search and meeting similarity can be achieved by
+composing existing nlink-jp tools:
+
+- **Text search / similarity**: `meeting-note compile` → Markdown → `lite-rag index` + `lite-rag query`
+- **Structured queries**: JSON → `jq` / `jstats` / `json-to-table`
+
+Building a custom storage layer is unnecessary when the UNIX pipeline
+approach covers the use cases with existing tools.
 
 ## 5. Required API Scopes
 
