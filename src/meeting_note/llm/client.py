@@ -2,12 +2,20 @@
 
 from __future__ import annotations
 
-from typing import Any
+import logging
+import time
+from typing import Any, TypeVar
+
+from pydantic import BaseModel
 
 from google import genai
 from google.genai import types
 
 from meeting_note.config import GeminiConfig
+
+logger = logging.getLogger(__name__)
+
+T = TypeVar("T", bound=BaseModel)
 
 
 class GeminiClient:
@@ -21,31 +29,96 @@ class GeminiClient:
             location=config.location,
         )
 
-    def generate(
+    def complete_structured(
         self,
-        prompt: str,
+        system_prompt: str,
+        user_prompt: str,
+        schema: type[T],
         *,
         files: list[Any] | None = None,
-        response_schema: type | None = None,
+    ) -> T:
+        """Send a prompt and parse the response into a Pydantic model.
+
+        Uses Gemini's response_schema for guaranteed valid JSON output.
+        """
+        response = self._call_with_retry(
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            files=files,
+            response_mime_type="application/json",
+            response_schema=schema,
+        )
+        return schema.model_validate_json(response)
+
+    def complete_text(
+        self,
+        system_prompt: str,
+        user_prompt: str,
     ) -> str:
-        """Send a prompt to Gemini and return the text response."""
-        contents: list[Any] = []
-        if files:
-            contents.extend(files)
-        contents.append(prompt)
-
-        config = types.GenerateContentConfig(
-            response_mime_type="application/json" if response_schema else "text/plain",
-            response_schema=response_schema,
+        """Send a prompt and return raw text response."""
+        return self._call_with_retry(
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
         )
-
-        response = self._client.models.generate_content(
-            model=self._config.model,
-            contents=contents,
-            config=config,
-        )
-        return response.text or ""
 
     def upload_file(self, file_path: str, *, mime_type: str = "") -> Any:
         """Upload a file for use in multimodal prompts."""
-        return self._client.files.upload(file_path=file_path, config={"mime_type": mime_type} if mime_type else None)
+        return self._client.files.upload(
+            file_path=file_path,
+            config={"mime_type": mime_type} if mime_type else None,
+        )
+
+    def _call_with_retry(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        *,
+        files: list[Any] | None = None,
+        response_mime_type: str | None = None,
+        response_schema: type[BaseModel] | None = None,
+        max_retries: int = 3,
+        base_delay: float = 2.0,
+    ) -> str:
+        """Call Gemini API with exponential backoff on rate limit errors."""
+        config = types.GenerateContentConfig(
+            system_instruction=system_prompt,
+        )
+        if response_mime_type:
+            config.response_mime_type = response_mime_type
+        if response_schema:
+            config.response_schema = response_schema
+
+        contents: list[Any] = []
+        if files:
+            contents.extend(files)
+        contents.append(user_prompt)
+
+        last_error: Exception | None = None
+        for attempt in range(max_retries + 1):
+            try:
+                response = self._client.models.generate_content(
+                    model=self._config.model,
+                    contents=contents,
+                    config=config,
+                )
+                return response.text or ""
+            except Exception as e:
+                error_str = str(e).lower()
+                is_retryable = any(
+                    keyword in error_str
+                    for keyword in ("429", "resource_exhausted", "rate limit", "quota")
+                )
+                if not is_retryable or attempt == max_retries:
+                    raise
+                last_error = e
+                delay = base_delay * (2**attempt)
+                logger.warning(
+                    "Gemini API rate limited (attempt %d/%d), retrying in %.1fs: %s",
+                    attempt + 1,
+                    max_retries + 1,
+                    delay,
+                    e,
+                )
+                time.sleep(delay)
+
+        raise last_error  # type: ignore[misc]
