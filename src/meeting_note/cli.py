@@ -42,42 +42,44 @@ def ingest(audio: str | None, transcript: str | None, output: str, project: str,
     except ValueError as e:
         raise click.ClickException(str(e)) from e
 
-    # Load transcript if provided
-    transcript_text: str | None = None
-    if transcript:
-        err.print(f"Loading transcript: {transcript}")
-        transcript_text = load_transcript(Path(transcript))
-
-    # Create client and analyze
-    err.print("Analyzing meeting via Gemini...")
-    client = GeminiClient(config)
     # Parse participant hints
     participants: list[str] = []
     if known_participants:
         participants = [p.strip() for p in known_participants.split(",") if p.strip()]
 
-    note = analyze_meeting(
-        transcript=transcript_text,
-        audio_path=audio,
-        known_participants=participants,
-        client=client,
-        config=config,
-    )
-
-    # Determine output path
-    if not output:
+    with err.status("[bold blue]Processing...") as status:
+        # Load transcript
+        transcript_text: str | None = None
         if transcript:
-            output = str(Path(transcript).with_suffix(".json"))
-        elif audio:
-            output = str(Path(audio).with_suffix(".json"))
-        else:
-            output = "meeting.json"
+            status.update("[bold blue]Loading transcript...")
+            transcript_text = load_transcript(Path(transcript))
 
-    # Write output
-    Path(output).write_text(
-        note.model_dump_json(by_alias=True, indent=2),
-        encoding="utf-8",
-    )
+        # Analyze via Gemini
+        status.update("[bold blue]Analyzing meeting via Gemini...")
+        client = GeminiClient(config)
+        note = analyze_meeting(
+            transcript=transcript_text,
+            audio_path=audio,
+            known_participants=participants,
+            client=client,
+            config=config,
+        )
+
+        # Write output
+        status.update("[bold blue]Writing output...")
+        if not output:
+            if transcript:
+                output = str(Path(transcript).with_suffix(".json"))
+            elif audio:
+                output = str(Path(audio).with_suffix(".json"))
+            else:
+                output = "meeting.json"
+
+        Path(output).write_text(
+            note.model_dump_json(by_alias=True, indent=2),
+            encoding="utf-8",
+        )
+
     err.print(f"[green]Wrote structured meeting data to {output}[/green]")
 
 
@@ -95,15 +97,19 @@ def compile(input_file: str, fmt: str, output: str, timezone: str) -> None:
     except Exception as e:
         raise click.ClickException(f"Failed to parse {input_file}: {e}") from e
 
-    if fmt == "html":
-        content = render_html(note, tz=timezone)
-        default_ext = ".html"
-    else:
-        content = render_markdown(note, tz=timezone)
-        default_ext = ".md"
+    with err.status("[bold blue]Compiling...") as status:
+        if fmt == "html":
+            status.update("[bold blue]Rendering HTML...")
+            content = render_html(note, tz=timezone)
+            default_ext = ".html"
+        else:
+            status.update("[bold blue]Rendering Markdown...")
+            content = render_markdown(note, tz=timezone)
+            default_ext = ".md"
 
-    if not output:
-        output = str(input_path.with_suffix(default_ext))
+        if not output:
+            output = str(input_path.with_suffix(default_ext))
 
-    Path(output).write_text(content, encoding="utf-8")
+        Path(output).write_text(content, encoding="utf-8")
+
     err.print(f"[green]Wrote {fmt} to {output}[/green]")
