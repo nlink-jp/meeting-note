@@ -2,6 +2,12 @@
 
 from __future__ import annotations
 
+from meeting_note.compile.labels import (
+    DYNAMICS_RELATION_LABELS,
+    MEETING_TYPE_LABELS,
+    PARTICIPANT_ROLE_LABELS,
+    STATUS_LABELS,
+)
 from meeting_note.models import AgendaStatus, MeetingNote
 
 
@@ -14,44 +20,45 @@ def render_markdown(note: MeetingNote) -> str:
     lines.append("")
 
     # Metadata
-    lines.append(f"- **Date**: {note.date.strftime('%Y-%m-%d %H:%M')}")
+    lines.append(f"- **日時**: {note.date.strftime('%Y-%m-%d %H:%M')}")
     if note.duration_seconds:
         minutes = note.duration_seconds // 60
-        lines.append(f"- **Duration**: {minutes} min")
+        lines.append(f"- **所要時間**: {minutes}分")
     if note.meeting_type:
-        lines.append(f"- **Type**: {note.meeting_type.value}")
+        lines.append(f"- **種別**: {MEETING_TYPE_LABELS.get(note.meeting_type.value, note.meeting_type.value)}")
     if note.context:
-        lines.append(f"- **Context**: {note.context}")
+        lines.append(f"- **背景**: {note.context}")
     lines.append("")
 
     # Participants
     if note.participants:
-        lines.append("## Participants")
+        lines.append("## 参加者")
         lines.append("")
-        lines.append("| Name | Role | Affiliation |")
-        lines.append("|------|------|-------------|")
+        lines.append("| 氏名 | 役割 | 所属 |")
+        lines.append("|------|------|------|")
         for p in note.participants:
-            role = p.role.value if p.role else ""
+            role = PARTICIPANT_ROLE_LABELS.get(p.role.value, p.role.value) if p.role else ""
             lines.append(f"| {_escape_cell(p.name)} | {_escape_cell(role)} | {_escape_cell(p.affiliation)} |")
         lines.append("")
 
     # Participant dynamics
     if note.participant_dynamics:
-        lines.append("## Participant Dynamics")
+        lines.append("## 参加者間の関係性")
         lines.append("")
-        lines.append("| From | To | Relation | Topic | Detail |")
-        lines.append("|------|----|----------|-------|--------|")
+        lines.append("| 発信者 | 受信者 | 関係 | 議題 | 詳細 |")
+        lines.append("|--------|--------|------|------|------|")
         for d in note.participant_dynamics:
+            relation = DYNAMICS_RELATION_LABELS.get(d.relation.value, d.relation.value)
             lines.append(
                 f"| {_escape_cell(d.from_name)} | {_escape_cell(d.to_name)} "
-                f"| {_escape_cell(d.relation.value)} | {_escape_cell(d.topic)} "
+                f"| {_escape_cell(relation)} | {_escape_cell(d.topic)} "
                 f"| {_escape_cell(d.detail)} |"
             )
         lines.append("")
 
     # Agenda
     if note.agenda:
-        lines.append("## Agenda")
+        lines.append("## 議題")
         lines.append("")
         for i, item in enumerate(note.agenda, 1):
             status_label = _status_label(item.status)
@@ -59,16 +66,16 @@ def render_markdown(note: MeetingNote) -> str:
             lines.append("")
 
             if item.summary:
-                lines.append(f"**Summary**: {item.summary}")
+                lines.append(f"**概要**: {item.summary}")
                 lines.append("")
 
             if item.speakers:
-                lines.append(f"**Speakers**: {', '.join(item.speakers)}")
+                lines.append(f"**発言者**: {', '.join(item.speakers)}")
                 lines.append("")
 
             # Discussion points
             if item.discussion_points:
-                lines.append("#### Discussion Points")
+                lines.append("#### 議論のポイント")
                 lines.append("")
                 for point in item.discussion_points:
                     lines.append(f"- {point}")
@@ -76,30 +83,30 @@ def render_markdown(note: MeetingNote) -> str:
 
             # Decisions
             if item.decisions:
-                lines.append("#### Decisions")
+                lines.append("#### 決定事項")
                 lines.append("")
                 for decision in item.decisions:
-                    lines.append(f"**Decision**: {decision.what}")
+                    lines.append(f"**決定**: {decision.what}")
                     lines.append("")
                     if decision.why:
-                        lines.append(f"> **Why**: {decision.why}")
+                        lines.append(f"> **理由**: {decision.why}")
                         lines.append("")
                     if decision.alternatives_considered:
-                        lines.append("**Alternatives considered**:")
+                        lines.append("**検討された代替案**:")
                         lines.append("")
                         for alt in decision.alternatives_considered:
                             lines.append(f"- ~~{alt.option}~~ -- {alt.rejected_because}")
                         lines.append("")
                     if decision.decided_by:
-                        lines.append(f"**Decided by**: {', '.join(decision.decided_by)}")
+                        lines.append(f"**決定者**: {', '.join(decision.decided_by)}")
                         lines.append("")
 
             # Action items
             if item.action_items:
-                lines.append("#### Action Items")
+                lines.append("#### アクションアイテム")
                 lines.append("")
-                lines.append("| Owner | Task | Due | Context |")
-                lines.append("|-------|------|-----|---------|")
+                lines.append("| 担当者 | タスク | 期限 | 背景 |")
+                lines.append("|--------|--------|------|------|")
                 for ai in item.action_items:
                     lines.append(
                         f"| {_escape_cell(ai.owner)} | {_escape_cell(ai.task)} "
@@ -109,10 +116,10 @@ def render_markdown(note: MeetingNote) -> str:
 
             # Unresolved
             if item.unresolved:
-                lines.append("#### Unresolved")
+                lines.append("#### 未解決事項")
                 lines.append("")
-                lines.append("| Issue | Blocker | Carry Forward |")
-                lines.append("|-------|---------|---------------|")
+                lines.append("| 課題 | ブロッカー | 持ち越し先 |")
+                lines.append("|------|-----------|-----------|")
                 for u in item.unresolved:
                     lines.append(
                         f"| {_escape_cell(u.issue)} | {_escape_cell(u.blocker)} "
@@ -122,7 +129,7 @@ def render_markdown(note: MeetingNote) -> str:
 
     # Key takeaways
     if note.key_takeaways:
-        lines.append("## Key Takeaways")
+        lines.append("## 主要な結論")
         lines.append("")
         for takeaway in note.key_takeaways:
             lines.append(f"- {takeaway}")
@@ -134,8 +141,8 @@ def render_markdown(note: MeetingNote) -> str:
     if note.metadata.generated_by:
         generated_at = ""
         if note.metadata.generated_at:
-            generated_at = f" at {note.metadata.generated_at.strftime('%Y-%m-%d %H:%M:%S UTC')}"
-        lines.append(f"*Generated by {note.metadata.generated_by}{generated_at}*")
+            generated_at = f" ({note.metadata.generated_at.strftime('%Y-%m-%d %H:%M:%S UTC')})"
+        lines.append(f"*{note.metadata.generated_by} により自動生成{generated_at}*")
         lines.append("")
 
     return "\n".join(lines)
@@ -147,11 +154,5 @@ def _escape_cell(text: str) -> str:
 
 
 def _status_label(status: AgendaStatus) -> str:
-    """Return a status label string."""
-    labels = {
-        AgendaStatus.DECIDED: "[DECIDED]",
-        AgendaStatus.PENDING: "[PENDING]",
-        AgendaStatus.REJECTED: "[REJECTED]",
-        AgendaStatus.INFORMATIONAL: "[INFO]",
-    }
-    return labels.get(status, "")
+    """Return a localized status label string."""
+    return STATUS_LABELS.get(status, "")

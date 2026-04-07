@@ -16,5 +16,8 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 
+# Simulation output
+simulation-output*/
+
 # macOS
 .DS_Store

@@ -18,7 +18,6 @@ class TestRenderHtml:
     def test_self_contained(self, sample_meeting_note: MeetingNote) -> None:
         html = render_html(sample_meeting_note)
         assert "<style>" in html
-        # No external stylesheets or scripts
         assert 'rel="stylesheet"' not in html
         assert "<script src=" not in html
 
@@ -60,3 +59,18 @@ class TestRenderHtml:
     def test_lang_attribute(self, sample_meeting_note: MeetingNote) -> None:
         html = render_html(sample_meeting_note, lang="en")
         assert 'lang="en"' in html
+
+    def test_localized_labels(self, sample_meeting_note: MeetingNote) -> None:
+        html = render_html(sample_meeting_note)
+        assert "参加者" in html
+        assert "議題" in html
+        assert "主要な結論" in html
+        assert "決定事項" in html
+
+    def test_role_labels_localized(self, sample_meeting_note: MeetingNote) -> None:
+        html = render_html(sample_meeting_note)
+        assert "主催者" in html
+
+    def test_relation_labels_localized(self, sample_meeting_note: MeetingNote) -> None:
+        html = render_html(sample_meeting_note)
+        assert "提案" in html

@@ -17,15 +17,15 @@
   --color-pending-bg: #fffbeb;
   --color-rejected: #dc2626;
   --color-rejected-bg: #fef2f2;
-  --color-info: #6366f1;
-  --color-info-bg: #eef2ff;
+  --color-informational: #6366f1;
+  --color-informational-bg: #eef2ff;
   --color-why-bg: #f0f9ff;
   --color-why-border: #0284c7;
   --gap: 1rem;
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Sans", "Noto Sans JP", sans-serif;
   color: var(--color-text);
   background: var(--color-bg);
   line-height: 1.6;
@@ -48,14 +48,13 @@ th { background: var(--color-card-bg); font-weight: 600; }
   border-radius: 4px;
   font-size: 0.75rem;
   font-weight: 600;
-  text-transform: uppercase;
   letter-spacing: 0.03em;
   vertical-align: middle;
 }
 .badge-decided { color: var(--color-decided); background: var(--color-decided-bg); }
 .badge-pending { color: var(--color-pending); background: var(--color-pending-bg); }
 .badge-rejected { color: var(--color-rejected); background: var(--color-rejected-bg); }
-.badge-informational { color: var(--color-info); background: var(--color-info-bg); }
+.badge-informational { color: var(--color-informational); background: var(--color-informational-bg); }
 .agenda-card {
   background: var(--color-card-bg);
   border: 1px solid var(--color-border);
@@ -97,20 +96,20 @@ li { margin: 0.25rem 0; }
 <h1>{{ note.title }}</h1>
 <div class="meta">
   <span>{{ note.date | format_date }}</span>
-  {% if note.duration_seconds %}<span>{{ note.duration_seconds | duration_min }} min</span>{% endif %}
-  {% if note.meeting_type %}<span>{{ note.meeting_type.value }}</span>{% endif %}
+  {% if note.duration_seconds %}<span>{{ note.duration_seconds | duration_min }}分</span>{% endif %}
+  {% if note.meeting_type %}<span>{{ note.meeting_type.value | meeting_type_label }}</span>{% endif %}
   {% if note.context %}<span>{{ note.context }}</span>{% endif %}
 </div>
 
 {% if note.participants %}
-<h2>Participants</h2>
+<h2>参加者</h2>
 <table>
-  <thead><tr><th>Name</th><th>Role</th><th>Affiliation</th></tr></thead>
+  <thead><tr><th>氏名</th><th>役割</th><th>所属</th></tr></thead>
   <tbody>
   {% for p in note.participants %}
     <tr>
       <td>{{ p.name }}</td>
-      <td>{{ p.role.value if p.role else "" }}</td>
+      <td>{{ p.role.value | role_label if p.role else "" }}</td>
       <td>{{ p.affiliation }}</td>
     </tr>
   {% endfor %}
@@ -119,15 +118,15 @@ li { margin: 0.25rem 0; }
 {% endif %}
 
 {% if note.participant_dynamics %}
-<h2>Participant Dynamics</h2>
+<h2>参加者間の関係性</h2>
 <table>
-  <thead><tr><th>From</th><th>To</th><th>Relation</th><th>Topic</th><th>Detail</th></tr></thead>
+  <thead><tr><th>発信者</th><th>受信者</th><th>関係</th><th>議題</th><th>詳細</th></tr></thead>
   <tbody>
   {% for d in note.participant_dynamics %}
     <tr>
       <td>{{ d.from_name }}</td>
       <td>{{ d.to_name }}</td>
-      <td>{{ d.relation.value }}</td>
+      <td>{{ d.relation.value | relation_label }}</td>
       <td>{{ d.topic }}</td>
       <td>{{ d.detail }}</td>
     </tr>
@@ -137,20 +136,20 @@ li { margin: 0.25rem 0; }
 {% endif %}
 
 {% if note.agenda %}
-<h2>Agenda</h2>
+<h2>議題</h2>
 {% for item in note.agenda %}
 <div class="agenda-card">
   <div class="agenda-header" onclick="this.parentElement.querySelector('.agenda-body').style.display = this.parentElement.querySelector('.agenda-body').style.display === 'none' ? 'block' : 'none'">
     <h3>{{ loop.index }}. {{ item.title }}</h3>
-    <span class="badge badge-{{ item.status.value }}">{{ item.status.value }}</span>
+    <span class="badge badge-{{ item.status.value | status_css }}">{{ item.status | status_label }}</span>
     <span class="toggle-icon">&#9660;</span>
   </div>
   <div class="agenda-body">
     {% if item.summary %}<p>{{ item.summary }}</p>{% endif %}
-    {% if item.speakers %}<p><strong>Speakers</strong>: {{ item.speakers | join(", ") }}</p>{% endif %}
+    {% if item.speakers %}<p><strong>発言者</strong>: {{ item.speakers | join(", ") }}</p>{% endif %}
 
     {% if item.discussion_points %}
-    <h4>Discussion Points</h4>
+    <h4>議論のポイント</h4>
     <ul>
       {% for point in item.discussion_points %}
       <li>{{ point }}</li>
@@ -159,17 +158,17 @@ li { margin: 0.25rem 0; }
     {% endif %}
 
     {% if item.decisions %}
-    <h4>Decisions</h4>
+    <h4>決定事項</h4>
     {% for decision in item.decisions %}
     <div class="decision-block">
       <p><strong>{{ decision.what }}</strong></p>
       {% if decision.why %}
       <div class="why-box">
-        <strong>Why:</strong> {{ decision.why }}
+        <strong>理由:</strong> {{ decision.why }}
       </div>
       {% endif %}
       {% if decision.alternatives_considered %}
-      <p><strong>Alternatives considered:</strong></p>
+      <p><strong>検討された代替案:</strong></p>
       <ul>
         {% for alt in decision.alternatives_considered %}
         <li><span class="alt-rejected">{{ alt.option }}</span> &mdash; {{ alt.rejected_because }}</li>
@@ -177,16 +176,16 @@ li { margin: 0.25rem 0; }
       </ul>
       {% endif %}
       {% if decision.decided_by %}
-      <p><strong>Decided by:</strong> {{ decision.decided_by | join(", ") }}</p>
+      <p><strong>決定者:</strong> {{ decision.decided_by | join(", ") }}</p>
       {% endif %}
     </div>
     {% endfor %}
     {% endif %}
 
     {% if item.action_items %}
-    <h4>Action Items</h4>
+    <h4>アクションアイテム</h4>
     <table>
-      <thead><tr><th>Owner</th><th>Task</th><th>Due</th><th>Context</th></tr></thead>
+      <thead><tr><th>担当者</th><th>タスク</th><th>期限</th><th>背景</th></tr></thead>
       <tbody>
       {% for ai in item.action_items %}
         <tr>
@@ -201,9 +200,9 @@ li { margin: 0.25rem 0; }
     {% endif %}
 
     {% if item.unresolved %}
-    <h4>Unresolved</h4>
+    <h4>未解決事項</h4>
     <table>
-      <thead><tr><th>Issue</th><th>Blocker</th><th>Carry Forward</th></tr></thead>
+      <thead><tr><th>課題</th><th>ブロッカー</th><th>持ち越し先</th></tr></thead>
       <tbody>
       {% for u in item.unresolved %}
         <tr>
@@ -221,7 +220,7 @@ li { margin: 0.25rem 0; }
 {% endif %}
 
 {% if note.key_takeaways %}
-<h2>Key Takeaways</h2>
+<h2>主要な結論</h2>
 <ul class="takeaways">
   {% for t in note.key_takeaways %}
   <li>{{ t }}</li>
@@ -231,7 +230,7 @@ li { margin: 0.25rem 0; }
 
 <div class="footer">
   {% if note.metadata.generated_by %}
-    Generated by {{ note.metadata.generated_by }}{% if generated_at %} at {{ generated_at }}{% endif %}
+    {{ note.metadata.generated_by }} により自動生成{% if generated_at %} ({{ generated_at }}){% endif %}
   {% endif %}
 </div>
 
