@@ -63,12 +63,17 @@ def analyze_meeting(
 
     user_prompt = "\n".join(user_prompt_parts)
 
-    note = client.complete_structured(
-        system_prompt,
-        user_prompt,
-        MeetingNote,
-        files=files if files else None,
-    )
+    try:
+        note = client.complete_structured(
+            system_prompt,
+            user_prompt,
+            MeetingNote,
+            files=files if files else None,
+        )
+    finally:
+        # Immediately delete uploaded files from Gemini Files API
+        for f in files:
+            client.delete_file(f)
 
     # Preserve raw transcript
     if transcript:

@@ -68,6 +68,14 @@ class GeminiClient:
             config={"mime_type": mime_type} if mime_type else None,
         )
 
+    def delete_file(self, file_ref: Any) -> None:
+        """Delete an uploaded file from Gemini Files API."""
+        try:
+            self._client.files.delete(name=file_ref.name)
+            logger.info("Deleted uploaded file: %s", file_ref.name)
+        except Exception as e:
+            logger.warning("Failed to delete uploaded file %s: %s", file_ref.name, e)
+
     def _call_with_retry(
         self,
         system_prompt: str,

@@ -101,3 +101,35 @@ class TestAnalyzeMeeting:
 
         assert result.metadata.model == "gemini-2.5-pro"
         assert result.metadata.generated_at is not None
+
+    def test_audio_file_deleted_after_success(self) -> None:
+        mock_client = MagicMock()
+        mock_client.complete_structured.return_value = SAMPLE_LLM_RESPONSE.model_copy(deep=True)
+        uploaded_file = MagicMock()
+        mock_client.upload_file.return_value = uploaded_file
+
+        config = GeminiConfig(project="test-project")
+        analyze_meeting(audio_path="meeting.mp3", client=mock_client, config=config)
+
+        mock_client.delete_file.assert_called_once_with(uploaded_file)
+
+    def test_audio_file_deleted_after_error(self) -> None:
+        mock_client = MagicMock()
+        mock_client.complete_structured.side_effect = Exception("LLM error")
+        uploaded_file = MagicMock()
+        mock_client.upload_file.return_value = uploaded_file
+
+        config = GeminiConfig(project="test-project")
+        with pytest.raises(Exception, match="LLM error"):
+            analyze_meeting(audio_path="meeting.mp3", client=mock_client, config=config)
+
+        mock_client.delete_file.assert_called_once_with(uploaded_file)
+
+    def test_no_delete_when_no_audio(self) -> None:
+        mock_client = MagicMock()
+        mock_client.complete_structured.return_value = SAMPLE_LLM_RESPONSE.model_copy(deep=True)
+
+        config = GeminiConfig(project="test-project")
+        analyze_meeting(transcript="text", client=mock_client, config=config)
+
+        mock_client.delete_file.assert_not_called()
