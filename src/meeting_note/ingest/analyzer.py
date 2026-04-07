@@ -70,6 +70,10 @@ def analyze_meeting(
         files=files if files else None,
     )
 
+    # Preserve raw transcript
+    if transcript:
+        note.raw_transcript = transcript
+
     # Populate metadata
     note.metadata.generated_by = f"meeting-note v{__version__}"
     note.metadata.generated_at = datetime.now(timezone.utc)
@@ -111,6 +115,7 @@ EXTRACTION GUIDELINES:
 3. **Agenda items**: Identify each topic discussed. For each:
    - Determine status: decided / pending / rejected / informational
    - Summarize the discussion
+   - Extract **utterances**: key statements by each speaker relevant to this topic, preserving the original wording as closely as possible. Include speaker name and the verbatim or near-verbatim text. Include timestamps if available.
    - Extract decisions with rationale (WHY was this decided?) and alternatives that were considered (with rejection reasons)
    - Extract action items with owner, task description, due date if mentioned, and originating context
    - Note unresolved issues with blockers and where they carry forward to

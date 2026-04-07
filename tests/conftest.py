@@ -13,6 +13,7 @@ from meeting_note.models import (
     Participant,
     ParticipantDynamics,
     ParticipantRole,
+    Utterance,
 )
 
 
@@ -48,6 +49,10 @@ def sample_meeting_note() -> MeetingNote:
                 status=AgendaStatus.DECIDED,
                 summary="Decided on incremental migration strategy",
                 speakers=["Suzuki", "Sato"],
+                utterances=[
+                    Utterance(speaker="Suzuki", text="I propose we go with incremental migration to avoid a feature freeze."),
+                    Utterance(speaker="Sato", text="Agreed. The risk profile is much better with incremental."),
+                ],
                 discussion_points=[
                     "Current API has performance bottlenecks",
                     "Two approaches: full rewrite vs incremental migration",
@@ -102,6 +107,7 @@ def sample_meeting_note() -> MeetingNote:
             "API redesign will proceed with incremental migration",
             "CI budget decision deferred pending finance approval",
         ],
+        raw_transcript="Suzuki: I propose we go with incremental migration.\nSato: Agreed.\nTanaka: Let's discuss CI budget next.",
         metadata=MeetingMetadata(
             source_audio="sprint-planning-2026-04-07.mp3",
             source_transcript="sprint-planning-2026-04-07.txt",

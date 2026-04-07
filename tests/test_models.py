@@ -12,6 +12,7 @@ from meeting_note.models import (
     Participant,
     ParticipantRole,
     UnresolvedItem,
+    Utterance,
 )
 
 
@@ -114,3 +115,31 @@ class TestFieldValidators:
     def test_meeting_id_preserved_if_set(self) -> None:
         note = MeetingNote(meeting_id="custom-id", title="Test", date="2026-04-07T10:00:00+09:00")
         assert note.meeting_id == "custom-id"
+
+    def test_utterance_coerce_none(self) -> None:
+        u = Utterance.model_validate({"speaker": "Test", "text": None})
+        assert u.text == ""
+
+    def test_utterance_coerce_list(self) -> None:
+        u = Utterance.model_validate({"speaker": "Test", "text": ["line1", "line2"]})
+        assert u.text == "line1\nline2"
+
+
+class TestRawTranscript:
+    def test_raw_transcript_preserved(self, sample_meeting_note: MeetingNote) -> None:
+        assert "Suzuki" in sample_meeting_note.raw_transcript
+        assert "incremental migration" in sample_meeting_note.raw_transcript
+
+    def test_utterances_in_agenda(self, sample_meeting_note: MeetingNote) -> None:
+        item = sample_meeting_note.agenda[0]
+        assert len(item.utterances) == 2
+        assert item.utterances[0].speaker == "Suzuki"
+        assert "incremental" in item.utterances[0].text
+
+    def test_json_roundtrip_with_utterances(self, sample_meeting_note: MeetingNote) -> None:
+        import json
+        json_str = sample_meeting_note.model_dump_json(by_alias=True)
+        parsed = json.loads(json_str)
+        restored = MeetingNote.model_validate(parsed)
+        assert restored.raw_transcript == sample_meeting_note.raw_transcript
+        assert len(restored.agenda[0].utterances) == 2

@@ -109,11 +109,29 @@ class UnresolvedItem(BaseModel):
         return v  # type: ignore[return-value]
 
 
+class Utterance(BaseModel):
+    """A raw utterance attributed to a speaker."""
+
+    speaker: str
+    text: str
+    timestamp: str = ""
+
+    @field_validator("speaker", "text", "timestamp", mode="before")
+    @classmethod
+    def coerce_to_str(cls, v: object) -> str:
+        if v is None:
+            return ""
+        if isinstance(v, list):
+            return "\n".join(str(item) for item in v)
+        return v  # type: ignore[return-value]
+
+
 class AgendaItem(BaseModel):
     title: str
     status: AgendaStatus
     summary: str = ""
     speakers: list[str] = Field(default_factory=list)
+    utterances: list[Utterance] = Field(default_factory=list)
     discussion_points: list[str] = Field(default_factory=list)
     decisions: list[Decision] = Field(default_factory=list)
     action_items: list[ActionItem] = Field(default_factory=list)
@@ -141,6 +159,7 @@ class MeetingNote(BaseModel):
     participant_dynamics: list[ParticipantDynamics] = Field(default_factory=list)
     agenda: list[AgendaItem] = Field(default_factory=list)
     key_takeaways: list[str] = Field(default_factory=list)
+    raw_transcript: str = ""
     metadata: MeetingMetadata = Field(default_factory=MeetingMetadata)
 
     @model_validator(mode="after")

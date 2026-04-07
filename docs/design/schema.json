@@ -79,6 +79,19 @@
             "type": "array",
             "items": { "type": "string" }
           },
+          "utterances": {
+            "type": "array",
+            "description": "Key statements by speakers relevant to this topic, preserving original wording",
+            "items": {
+              "type": "object",
+              "required": ["speaker", "text"],
+              "properties": {
+                "speaker": { "type": "string" },
+                "text": { "type": "string" },
+                "timestamp": { "type": "string" }
+              }
+            }
+          },
           "discussion_points": {
             "type": "array",
             "items": { "type": "string" }
@@ -140,6 +153,10 @@
     "key_takeaways": {
       "type": "array",
       "items": { "type": "string" }
+    },
+    "raw_transcript": {
+      "type": "string",
+      "description": "Full original transcript text preserved for archival (populated by meeting-note, not by LLM)"
     },
     "metadata": {
       "type": "object",
