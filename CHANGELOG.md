@@ -9,8 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
-- Project scaffold with CLI entry points (`ingest`, `compile`)
-- Pydantic data models for structured meeting notes (MeetingNote schema)
-- Gemini LLM client wrapper (google-genai SDK, ADC auth)
-- Configuration management via environment variables (`MEETING_NOTE_*`)
+- `ingest` command: extract structured meeting data from audio and/or transcript via Gemini
+  - Supports audio files (mp3, wav, m4a, ogg, flac, webm) via Files API
+  - Supports transcript files (txt, srt, vtt, json) with format auto-detection
+  - Prompt injection defense with nonce-tagged XML wrapping
+  - Structured JSON output with MeetingNote schema
+- `compile` command: generate documents from structured JSON
+  - Markdown output with tables, decision rationale, status labels
+  - Self-contained HTML with inline CSS/JS, status badges, collapsible agenda
+- Pydantic data models with field validators for LLM output normalization
+- Gemini LLM client with structured output parsing and retry with exponential backoff
+- Configuration management via `MEETING_NOTE_*` environment variables (ADC auth)
 - Design documents: planning.md, schema.json

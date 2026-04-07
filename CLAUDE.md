@@ -17,14 +17,21 @@ meeting-note compile meeting.json [-f markdown|html] [-o output.md]
 ### Module Structure
 ```
 src/meeting_note/
-  __init__.py     - Version
-  cli.py          - Click CLI: ingest + compile
-  config.py       - GeminiConfig (project/location/model, ADC)
-  models.py       - All Pydantic data models (MeetingNote schema)
-  ingest/         - Audio/transcript → structured JSON
-  compile/        - Structured JSON → Markdown/HTML
+  __init__.py        - Version
+  cli.py             - Click CLI: ingest + compile
+  config.py          - GeminiConfig (project/location/model, ADC)
+  models.py          - All Pydantic data models (MeetingNote schema)
+  ingest/
+    loader.py        - Transcript file loading (txt, srt, vtt, json)
+    analyzer.py      - Meeting analysis orchestrator (system prompt, LLM call)
+    sanitizer.py     - Prompt injection defense (nonce-tagged XML wrapping)
+  compile/
+    markdown.py      - Markdown renderer
+    html.py          - HTML renderer (Jinja2)
+    templates/
+      report.html    - Self-contained HTML template (inline CSS/JS)
   llm/
-    client.py     - Gemini client (google-genai SDK, ADC)
+    client.py        - Gemini client (structured output, retry, file upload)
 ```
 
 ## Security Rules
