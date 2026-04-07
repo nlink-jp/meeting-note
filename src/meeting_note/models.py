@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+import hashlib
 from datetime import datetime
 from enum import Enum
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class MeetingType(str, Enum):
@@ -67,6 +68,15 @@ class Decision(BaseModel):
     alternatives_considered: list[Alternative] = Field(default_factory=list)
     decided_by: list[str] = Field(default_factory=list)
 
+    @field_validator("what", "why", mode="before")
+    @classmethod
+    def coerce_to_str(cls, v: object) -> str:
+        if v is None:
+            return ""
+        if isinstance(v, list):
+            return "\n".join(str(item) for item in v)
+        return v  # type: ignore[return-value]
+
 
 class ActionItem(BaseModel):
     owner: str
@@ -74,11 +84,29 @@ class ActionItem(BaseModel):
     due: str = ""
     context: str = ""
 
+    @field_validator("owner", "task", "due", "context", mode="before")
+    @classmethod
+    def coerce_to_str(cls, v: object) -> str:
+        if v is None:
+            return ""
+        if isinstance(v, list):
+            return "\n".join(str(item) for item in v)
+        return v  # type: ignore[return-value]
+
 
 class UnresolvedItem(BaseModel):
     issue: str
     blocker: str = ""
     carry_forward_to: str = ""
+
+    @field_validator("issue", "blocker", "carry_forward_to", mode="before")
+    @classmethod
+    def coerce_to_str(cls, v: object) -> str:
+        if v is None:
+            return ""
+        if isinstance(v, list):
+            return "\n".join(str(item) for item in v)
+        return v  # type: ignore[return-value]
 
 
 class AgendaItem(BaseModel):
@@ -103,7 +131,7 @@ class MeetingMetadata(BaseModel):
 class MeetingNote(BaseModel):
     """Root model for a structured meeting note."""
 
-    meeting_id: str
+    meeting_id: str = ""
     title: str
     date: datetime
     duration_seconds: int = 0
@@ -114,3 +142,11 @@ class MeetingNote(BaseModel):
     agenda: list[AgendaItem] = Field(default_factory=list)
     key_takeaways: list[str] = Field(default_factory=list)
     metadata: MeetingMetadata = Field(default_factory=MeetingMetadata)
+
+    @model_validator(mode="after")
+    def _generate_meeting_id(self) -> MeetingNote:
+        """Auto-generate meeting_id from title+date if not provided."""
+        if not self.meeting_id:
+            seed = f"{self.title}:{self.date.isoformat()}"
+            self.meeting_id = hashlib.sha256(seed.encode()).hexdigest()[:12]
+        return self

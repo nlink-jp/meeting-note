@@ -3,12 +3,15 @@
 import json
 
 from meeting_note.models import (
+    ActionItem,
     AgendaItem,
     AgendaStatus,
+    Decision,
     MeetingNote,
     MeetingType,
     Participant,
     ParticipantRole,
+    UnresolvedItem,
 )
 
 
@@ -71,3 +74,43 @@ class TestAgendaItem:
         assert len(item.decisions) == 0
         assert len(item.unresolved) == 1
         assert item.unresolved[0].blocker != ""
+
+
+class TestFieldValidators:
+    """Tests for LLM output normalization validators."""
+
+    def test_decision_none_to_empty_string(self) -> None:
+        d = Decision.model_validate({"what": None, "why": None})
+        assert d.what == ""
+        assert d.why == ""
+
+    def test_decision_list_to_string(self) -> None:
+        d = Decision.model_validate({"what": ["point 1", "point 2"], "why": "reason"})
+        assert d.what == "point 1\npoint 2"
+
+    def test_action_item_none_to_empty(self) -> None:
+        a = ActionItem.model_validate({"owner": "Tanaka", "task": "Do thing", "due": None, "context": None})
+        assert a.due == ""
+        assert a.context == ""
+
+    def test_action_item_list_to_string(self) -> None:
+        a = ActionItem.model_validate({"owner": "Tanaka", "task": ["step 1", "step 2"]})
+        assert a.task == "step 1\nstep 2"
+
+    def test_unresolved_none_to_empty(self) -> None:
+        u = UnresolvedItem.model_validate({"issue": "something", "blocker": None})
+        assert u.blocker == ""
+
+    def test_meeting_id_auto_generated(self) -> None:
+        note = MeetingNote(title="Test", date="2026-04-07T10:00:00+09:00")
+        assert note.meeting_id != ""
+        assert len(note.meeting_id) == 12
+
+    def test_meeting_id_deterministic(self) -> None:
+        note1 = MeetingNote(title="Test", date="2026-04-07T10:00:00+09:00")
+        note2 = MeetingNote(title="Test", date="2026-04-07T10:00:00+09:00")
+        assert note1.meeting_id == note2.meeting_id
+
+    def test_meeting_id_preserved_if_set(self) -> None:
+        note = MeetingNote(meeting_id="custom-id", title="Test", date="2026-04-07T10:00:00+09:00")
+        assert note.meeting_id == "custom-id"
