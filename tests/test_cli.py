@@ -86,3 +86,51 @@ class TestIngestCommand:
         result = runner.invoke(main, ["ingest", "-t", "/dev/null"])
         assert result.exit_code != 0
         assert "GCP project ID is required" in result.output
+
+
+class TestCompileCommand:
+    def test_compile_markdown(self, tmp_path: Path, sample_meeting_note: MeetingNote) -> None:
+        input_json = tmp_path / "meeting.json"
+        input_json.write_text(sample_meeting_note.model_dump_json(by_alias=True, indent=2), encoding="utf-8")
+        output = tmp_path / "meeting.md"
+
+        runner = CliRunner()
+        result = runner.invoke(main, ["compile", str(input_json), "-f", "markdown", "-o", str(output)])
+
+        assert result.exit_code == 0, result.output
+        content = output.read_text()
+        assert "# Sprint Planning Meeting" in content
+
+    def test_compile_html(self, tmp_path: Path, sample_meeting_note: MeetingNote) -> None:
+        input_json = tmp_path / "meeting.json"
+        input_json.write_text(sample_meeting_note.model_dump_json(by_alias=True, indent=2), encoding="utf-8")
+        output = tmp_path / "meeting.html"
+
+        runner = CliRunner()
+        result = runner.invoke(main, ["compile", str(input_json), "-f", "html", "-o", str(output)])
+
+        assert result.exit_code == 0, result.output
+        content = output.read_text()
+        assert "<!DOCTYPE html>" in content
+        assert "Sprint Planning Meeting" in content
+
+    def test_compile_default_output_path(self, tmp_path: Path, sample_meeting_note: MeetingNote) -> None:
+        input_json = tmp_path / "sprint.json"
+        input_json.write_text(sample_meeting_note.model_dump_json(by_alias=True, indent=2), encoding="utf-8")
+
+        runner = CliRunner()
+        result = runner.invoke(main, ["compile", str(input_json)])
+
+        assert result.exit_code == 0, result.output
+        expected = tmp_path / "sprint.md"
+        assert expected.exists()
+
+    def test_compile_invalid_json(self, tmp_path: Path) -> None:
+        input_json = tmp_path / "bad.json"
+        input_json.write_text('{"not": "a meeting"}', encoding="utf-8")
+
+        runner = CliRunner()
+        result = runner.invoke(main, ["compile", str(input_json)])
+
+        assert result.exit_code != 0
+        assert "Failed to parse" in result.output

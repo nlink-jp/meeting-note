@@ -8,9 +8,11 @@ import click
 from rich.console import Console
 
 from meeting_note import __version__
+from meeting_note.compile import render_html, render_markdown
 from meeting_note.config import get_gemini_config
 from meeting_note.ingest import analyze_meeting, load_transcript
 from meeting_note.llm.client import GeminiClient
+from meeting_note.models import MeetingNote
 
 err = Console(stderr=True)
 
@@ -78,4 +80,22 @@ def ingest(audio: str | None, transcript: str | None, output: str, project: str,
 @click.option("--output", "-o", default="", help="Output file path")
 def compile(input_file: str, fmt: str, output: str) -> None:
     """Compile structured JSON into Markdown or HTML."""
-    click.echo("compile: not yet implemented")
+    input_path = Path(input_file)
+
+    try:
+        note = MeetingNote.model_validate_json(input_path.read_text(encoding="utf-8"))
+    except Exception as e:
+        raise click.ClickException(f"Failed to parse {input_file}: {e}") from e
+
+    if fmt == "html":
+        content = render_html(note)
+        default_ext = ".html"
+    else:
+        content = render_markdown(note)
+        default_ext = ".md"
+
+    if not output:
+        output = str(input_path.with_suffix(default_ext))
+
+    Path(output).write_text(content, encoding="utf-8")
+    err.print(f"[green]Wrote {fmt} to {output}[/green]")
