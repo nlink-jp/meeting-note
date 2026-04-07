@@ -74,6 +74,8 @@ make lint     # リンター実行
 
 ## ドキュメント
 
+- [データ構造定義書](docs/ja/data-format.md) — 構造化JSONスキーマリファレンス
+- [アーキテクチャと処理方式](docs/ja/architecture.md) — パイプライン、プロンプト設計、セキュリティ
 - [設計ドキュメント](docs/design/planning.md)
 - [JSONスキーマ](docs/design/schema.json)
 - [English documentation](README.md)

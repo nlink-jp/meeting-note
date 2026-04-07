@@ -77,6 +77,8 @@ make lint     # Run linter
 
 ## Documentation
 
+- [Data Format Specification](docs/en/data-format.md) — structured JSON schema reference
+- [Architecture and Processing](docs/en/architecture.md) — pipeline, prompt design, security
 - [Planning Document](docs/design/planning.md)
 - [JSON Schema](docs/design/schema.json)
 - [日本語ドキュメント](README.ja.md)
