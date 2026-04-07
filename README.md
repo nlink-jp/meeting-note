@@ -55,6 +55,9 @@ meeting-note ingest -a meeting.mp3 -o meeting.json
 
 # From transcript only
 meeting-note ingest -t transcript.txt -o meeting.json
+
+# With speaker hints (helps identify speakers in unlabeled transcripts)
+meeting-note ingest -t transcript.txt -p 'Tanaka,Sato,Suzuki' -o meeting.json
 ```
 
 ### Compile into a document

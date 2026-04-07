@@ -99,6 +99,17 @@ If information is not available or cannot be determined,
 use empty strings or empty lists — do not fabricate data.
 ```
 
+**Speaker identification hints** (`--known-participants` / `-p`):
+
+When provided, participant names are injected into the user prompt as:
+```
+Known participants: Tanaka, Sato, Suzuki
+Use these names to help identify speakers in the meeting.
+```
+This helps Gemini match voices to names when the transcript lacks speaker labels,
+or when audio-only input is used. The hint is placed before the sanitized transcript
+in the prompt, outside the nonce-tagged block.
+
 ### 4. LLM interaction
 
 **Structured output** (`llm/client.py::complete_structured()`):

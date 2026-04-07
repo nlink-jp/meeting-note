@@ -102,6 +102,17 @@ You are an expert meeting analyst.
 情報が入手できない場合は空文字列または空リストを使用すること。データを捏造しない。
 ```
 
+**話者識別ヒント**（`--known-participants` / `-p`）:
+
+指定された場合、参加者名がユーザープロンプトに注入されます:
+```
+Known participants: 田中, 佐藤, 鈴木
+Use these names to help identify speakers in the meeting.
+```
+文字起こしに話者ラベルがない場合や、音声のみの入力時に Gemini が音声と名前を
+対応付ける助けになります。ヒントはサニタイズされたテキストの前、ノンスタグブロックの
+外側に配置されます。
+
 ### 4. LLMインタラクション
 
 **構造化出力**（`llm/client.py::complete_structured()`）:

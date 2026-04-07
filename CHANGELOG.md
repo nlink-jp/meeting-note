@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.2.0] - 2026-04-08
+
+### Added
+
+- `--known-participants` / `-p` option: pass comma-separated speaker names as hints
+  to improve speaker identification when transcripts lack speaker labels
+- Progress spinner (rich Status) for `ingest` and `compile` commands with
+  step-by-step status messages
+
+### Fixed
+
+- Transcript loader now raises clear `ValueError` for broken JSON and empty arrays
+- `.gitignore` pattern corrected for simulation output files
+
+### Internal
+
+- 14 edge case tests added for transcript loader (empty files, broken JSON,
+  timing-only SRT/VTT, BOM-encoded UTF-8, null/bare-string JSON, HTML-tagged SRT)
+- Test count: 112 → 126
+
 ## [0.1.0] - 2026-04-08
 
 ### Added

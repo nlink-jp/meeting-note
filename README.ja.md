@@ -52,6 +52,9 @@ meeting-note ingest -a meeting.mp3 -o meeting.json
 
 # 文字起こしのみ
 meeting-note ingest -t transcript.txt -o meeting.json
+
+# 話者ヒント付き（話者ラベルのない文字起こしで話者特定を補助）
+meeting-note ingest -t transcript.txt -p '田中,佐藤,鈴木' -o meeting.json
 ```
 
 ### ドキュメントにコンパイル
