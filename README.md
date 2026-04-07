@@ -1,0 +1,86 @@
+# meeting-note
+
+Meeting minutes structuring tool — extract structured data from audio recordings
+and meeting transcripts via Vertex AI Gemini, then compile into Markdown or HTML.
+
+## Features
+
+- **Structured extraction**: Converts audio and/or transcript into structured JSON
+  with topics, decisions (with rationale), action items, participant dynamics, and more
+- **Document compilation**: Generates Markdown or self-contained HTML from structured JSON
+- **Decision tracking**: Captures not just *what* was decided, but *why*, including
+  alternatives considered and rejection reasons
+- **Participant dynamics**: Analyzes relationships between participants
+  (proposal→approval, delegation, Q&A, etc.)
+- **Flexible input**: Accepts audio files, transcript text, or both
+
+## Prerequisites
+
+- Python 3.11+
+- [uv](https://docs.astral.sh/uv/) package manager
+- Google Cloud project with Vertex AI API enabled
+- Application Default Credentials configured:
+  ```bash
+  gcloud auth application-default login
+  ```
+
+## Installation
+
+```bash
+git clone https://github.com/nlink-jp/meeting-note.git
+cd meeting-note
+uv sync
+```
+
+## Configuration
+
+Set environment variables (or create a `.env` file):
+
+```bash
+MEETING_NOTE_PROJECT=your-gcp-project-id    # Required
+MEETING_NOTE_LOCATION=us-central1           # Default
+MEETING_NOTE_MODEL=gemini-2.5-flash         # Default
+```
+
+## Usage
+
+### Extract structured data from a meeting
+
+```bash
+# From audio + transcript
+meeting-note ingest -a meeting.mp3 -t transcript.txt -o meeting.json
+
+# From audio only
+meeting-note ingest -a meeting.mp3 -o meeting.json
+
+# From transcript only
+meeting-note ingest -t transcript.txt -o meeting.json
+```
+
+### Compile into a document
+
+```bash
+# Markdown (default)
+meeting-note compile meeting.json -o meeting.md
+
+# HTML (self-contained)
+meeting-note compile meeting.json -f html -o meeting.html
+```
+
+## Building
+
+```bash
+make build    # Build package to dist/
+make test     # Run tests
+make lint     # Run linter
+```
+
+## Documentation
+
+- [Planning Document](docs/design/planning.md)
+- [JSON Schema](docs/design/schema.json)
+- [日本語ドキュメント](README.ja.md)
+
+## License
+
+MIT

@@ -1,0 +1,83 @@
+# meeting-note
+
+会議議事録構造化ツール — 音声録音や会議ツールの文字起こしから Vertex AI Gemini で
+構造化データを抽出し、Markdown や HTML にコンパイルします。
+
+## 特徴
+
+- **構造化抽出**: 音声や文字起こしから、議題・意思決定（根拠付き）・アクションアイテム・参加者間の関係性などを含む構造化JSONを生成
+- **ドキュメントコンパイル**: 構造化JSONからMarkdownまたは自己完結型HTMLを生成
+- **意思決定の追跡**: 「何が決まったか」だけでなく「なぜそう決まったか」を記録（検討された代替案と棄却理由を含む）
+- **参加者間の関係性分析**: 提案→承認、委任、質疑応答などの関係性を分析
+- **柔軟な入力**: 音声ファイル、文字起こしテキスト、または両方を受け付け
+
+## 前提条件
+
+- Python 3.11+
+- [uv](https://docs.astral.sh/uv/) パッケージマネージャ
+- Vertex AI API が有効な Google Cloud プロジェクト
+- Application Default Credentials の設定:
+  ```bash
+  gcloud auth application-default login
+  ```
+
+## インストール
+
+```bash
+git clone https://github.com/nlink-jp/meeting-note.git
+cd meeting-note
+uv sync
+```
+
+## 設定
+
+環境変数を設定（または `.env` ファイルを作成）:
+
+```bash
+MEETING_NOTE_PROJECT=your-gcp-project-id    # 必須
+MEETING_NOTE_LOCATION=us-central1           # デフォルト
+MEETING_NOTE_MODEL=gemini-2.5-flash         # デフォルト
+```
+
+## 使い方
+
+### 会議から構造化データを抽出
+
+```bash
+# 音声 + 文字起こし
+meeting-note ingest -a meeting.mp3 -t transcript.txt -o meeting.json
+
+# 音声のみ
+meeting-note ingest -a meeting.mp3 -o meeting.json
+
+# 文字起こしのみ
+meeting-note ingest -t transcript.txt -o meeting.json
+```
+
+### ドキュメントにコンパイル
+
+```bash
+# Markdown（デフォルト）
+meeting-note compile meeting.json -o meeting.md
+
+# HTML（自己完結型）
+meeting-note compile meeting.json -f html -o meeting.html
+```
+
+## ビルド
+
+```bash
+make build    # パッケージをdist/にビルド
+make test     # テスト実行
+make lint     # リンター実行
+```
+
+## ドキュメント
+
+- [設計ドキュメント](docs/design/planning.md)
+- [JSONスキーマ](docs/design/schema.json)
+- [English documentation](README.md)
+
+## ライセンス
+
+MIT
