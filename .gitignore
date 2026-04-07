@@ -16,8 +16,10 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 
-# Simulation output
-simulation-output*/
+# Simulation output (keep .txt input, ignore generated files)
+simulation/*.json
+simulation/*.md
+simulation/*.html
 
 # macOS
 .DS_Store
