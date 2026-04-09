@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.2.2] - 2026-04-09
+
+### Fixed
+
+- Raise a descriptive `ValueError` (with `finish_reason`) when Gemini returns an
+  empty response for structured output, instead of passing an empty string to
+  `model_validate_json` and surfacing a confusing pydantic `EOF` error
+
 ## [0.2.1] - 2026-04-08
 
 ### Fixed

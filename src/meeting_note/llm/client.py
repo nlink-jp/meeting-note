@@ -110,7 +110,19 @@ class GeminiClient:
                     contents=contents,
                     config=config,
                 )
-                return response.text or ""
+                text = response.text
+                if not text:
+                    # Diagnose why the model returned no text
+                    finish_reason = None
+                    try:
+                        finish_reason = response.candidates[0].finish_reason
+                    except Exception:
+                        pass
+                    raise ValueError(
+                        f"Gemini returned an empty response (finish_reason={finish_reason}). "
+                        "Possible causes: safety filter, content policy block, or quota issue."
+                    )
+                return text
             except Exception as e:
                 error_str = str(e).lower()
                 is_retryable = any(
