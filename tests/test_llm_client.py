@@ -30,6 +30,20 @@ class TestCompleteStructured:
         assert result.count == 5
 
     @patch("meeting_note.llm.client.genai.Client")
+    def test_raises_on_truncated_json(self, mock_client_cls: MagicMock) -> None:
+        """Truncated JSON without MAX_TOKENS finish_reason should still be caught."""
+        mock_response = MagicMock()
+        mock_response.text = '{"title": "truncated...'
+        mock_response.candidates = [MagicMock(finish_reason="STOP")]
+        mock_client_cls.return_value.models.generate_content.return_value = mock_response
+
+        config = GeminiConfig(project="test-project")
+        client = GeminiClient(config)
+
+        with pytest.raises(ValueError, match="truncated/invalid JSON"):
+            client.complete_structured("system", "user", SampleSchema)
+
+    @patch("meeting_note.llm.client.genai.Client")
     def test_passes_files(self, mock_client_cls: MagicMock) -> None:
         mock_response = MagicMock()
         mock_response.text = '{"title": "Test"}'

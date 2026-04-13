@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+import json
 import logging
 import time
 from typing import Any, TypeVar
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from google import genai
 from google.genai import types
@@ -48,7 +49,22 @@ class GeminiClient:
             response_mime_type="application/json",
             response_schema=schema,
         )
-        return schema.model_validate_json(response)
+        # Validate JSON is well-formed before passing to pydantic.
+        # Gemini may truncate output without setting finish_reason=MAX_TOKENS.
+        try:
+            json.loads(response)
+        except json.JSONDecodeError as e:
+            raise ValueError(
+                f"Gemini returned truncated/invalid JSON ({e}). "
+                f"Response length: {len(response)} chars. "
+                f"max_output_tokens={self._config.max_output_tokens}. "
+                "Try increasing MEETING_NOTE_MAX_OUTPUT_TOKENS or splitting the input."
+            ) from e
+        try:
+            return schema.model_validate_json(response)
+        except ValidationError:
+            logger.debug("Raw LLM response (first 500 chars): %s", response[:500])
+            raise
 
     def complete_text(
         self,
