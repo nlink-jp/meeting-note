@@ -12,6 +12,7 @@ class GeminiConfig(BaseSettings):
     project: str = Field(default="", description="GCP project ID")
     location: str = Field(default="us-central1", description="GCP location")
     model: str = Field(default="gemini-2.5-flash", description="Gemini model name")
+    max_output_tokens: int = Field(default=65536, description="Maximum output tokens for Gemini response")
     timezone: str = Field(default="Asia/Tokyo", description="Timezone for display (IANA name)")
 
     model_config = {"env_prefix": "MEETING_NOTE_", "env_file": ".env", "extra": "ignore"}

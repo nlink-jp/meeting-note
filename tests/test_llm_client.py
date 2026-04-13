@@ -19,6 +19,7 @@ class TestCompleteStructured:
     def test_parses_response(self, mock_client_cls: MagicMock) -> None:
         mock_response = MagicMock()
         mock_response.text = '{"title": "Test Meeting", "count": 5}'
+        mock_response.candidates = [MagicMock(finish_reason="STOP")]
         mock_client_cls.return_value.models.generate_content.return_value = mock_response
 
         config = GeminiConfig(project="test-project")
@@ -32,6 +33,7 @@ class TestCompleteStructured:
     def test_passes_files(self, mock_client_cls: MagicMock) -> None:
         mock_response = MagicMock()
         mock_response.text = '{"title": "Test"}'
+        mock_response.candidates = [MagicMock(finish_reason="STOP")]
         mock_client_cls.return_value.models.generate_content.return_value = mock_response
 
         config = GeminiConfig(project="test-project")
@@ -50,6 +52,7 @@ class TestCallWithRetry:
     def test_success_first_attempt(self, mock_client_cls: MagicMock) -> None:
         mock_response = MagicMock()
         mock_response.text = "ok"
+        mock_response.candidates = [MagicMock(finish_reason="STOP")]
         mock_client_cls.return_value.models.generate_content.return_value = mock_response
 
         config = GeminiConfig(project="test-project")
@@ -62,6 +65,7 @@ class TestCallWithRetry:
     def test_retries_on_429(self, mock_client_cls: MagicMock, mock_sleep: MagicMock) -> None:
         mock_response = MagicMock()
         mock_response.text = "ok"
+        mock_response.candidates = [MagicMock(finish_reason="STOP")]
         mock_generate = mock_client_cls.return_value.models.generate_content
         mock_generate.side_effect = [
             Exception("429 Resource Exhausted"),
@@ -75,6 +79,19 @@ class TestCallWithRetry:
         assert result == "ok"
         assert mock_generate.call_count == 2
         mock_sleep.assert_called_once()
+
+    @patch("meeting_note.llm.client.genai.Client")
+    def test_raises_on_max_tokens_truncation(self, mock_client_cls: MagicMock) -> None:
+        mock_response = MagicMock()
+        mock_response.text = '{"title": "truncated...'
+        mock_response.candidates = [MagicMock(finish_reason="MAX_TOKENS")]
+        mock_client_cls.return_value.models.generate_content.return_value = mock_response
+
+        config = GeminiConfig(project="test-project")
+        client = GeminiClient(config)
+
+        with pytest.raises(ValueError, match="truncated"):
+            client.complete_text("system", "user")
 
     @patch("meeting_note.llm.client.genai.Client")
     def test_raises_non_retryable(self, mock_client_cls: MagicMock) -> None:

@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.2.3] - 2026-04-13
+
+### Fixed
+
+- Set `max_output_tokens=65536` to prevent Gemini response truncation on long
+  meetings — the root cause of `EOF while parsing a string` pydantic errors
+- Detect `finish_reason=MAX_TOKENS` and raise a clear `ValueError` with guidance
+  instead of letting truncated JSON propagate to pydantic validation
+
+### Added
+
+- `MEETING_NOTE_MAX_OUTPUT_TOKENS` environment variable to configure the output
+  token limit (default: 65536)
+
 ## [0.2.2] - 2026-04-09
 
 ### Fixed

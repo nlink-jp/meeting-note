@@ -37,6 +37,7 @@ uv sync
 MEETING_NOTE_PROJECT=your-gcp-project-id    # 必須
 MEETING_NOTE_LOCATION=us-central1           # デフォルト
 MEETING_NOTE_MODEL=gemini-2.5-flash         # デフォルト
+MEETING_NOTE_MAX_OUTPUT_TOKENS=65536        # デフォルト
 ```
 
 ## 使い方

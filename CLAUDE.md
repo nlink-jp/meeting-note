@@ -65,6 +65,7 @@ Configure via environment variables (or `.env` file):
 MEETING_NOTE_PROJECT=your-gcp-project-id    # Required
 MEETING_NOTE_LOCATION=us-central1           # Default
 MEETING_NOTE_MODEL=gemini-2.5-flash         # Default
+MEETING_NOTE_MAX_OUTPUT_TOKENS=65536        # Default
 MEETING_NOTE_TIMEZONE=Asia/Tokyo            # Default
 ```
 

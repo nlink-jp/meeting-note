@@ -91,6 +91,7 @@ class GeminiClient:
         config = types.GenerateContentConfig(
             system_instruction=system_prompt,
             temperature=0.2,
+            max_output_tokens=self._config.max_output_tokens,
         )
         if response_mime_type:
             config.response_mime_type = response_mime_type
@@ -121,6 +122,17 @@ class GeminiClient:
                     raise ValueError(
                         f"Gemini returned an empty response (finish_reason={finish_reason}). "
                         "Possible causes: safety filter, content policy block, or quota issue."
+                    )
+                # Detect truncated response due to output token limit
+                try:
+                    finish_reason = response.candidates[0].finish_reason
+                except Exception:
+                    finish_reason = None
+                if finish_reason and str(finish_reason).upper() in ("MAX_TOKENS", "FINISH_REASON_MAX_TOKENS"):
+                    raise ValueError(
+                        f"Gemini response was truncated (finish_reason={finish_reason}). "
+                        f"The output exceeded max_output_tokens={self._config.max_output_tokens}. "
+                        "Consider increasing MEETING_NOTE_MAX_OUTPUT_TOKENS or splitting the input."
                     )
                 return text
             except Exception as e:

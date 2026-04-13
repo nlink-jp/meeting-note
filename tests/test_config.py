@@ -11,6 +11,13 @@ class TestGeminiConfig:
         assert config.project == "test-project"
         assert config.location == "us-central1"
         assert config.model == "gemini-2.5-flash"
+        assert config.max_output_tokens == 65536
+
+    def test_max_output_tokens_from_env(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("MEETING_NOTE_PROJECT", "test-project")
+        monkeypatch.setenv("MEETING_NOTE_MAX_OUTPUT_TOKENS", "32768")
+        config = GeminiConfig()
+        assert config.max_output_tokens == 32768
 
     def test_from_env(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setenv("MEETING_NOTE_PROJECT", "env-project")
