@@ -34,6 +34,29 @@ uv sync
 
 ## Configuration
 
+meeting-note reads configuration from multiple sources. The priority order is:
+
+1. **CLI flags** (highest priority)
+2. **Environment variables**
+3. **`.env` file** in the current directory
+4. **TOML config file** (`~/.config/meeting-note/config.toml`)
+5. **Built-in defaults** (lowest priority)
+
+### Config file setup
+
+Create `~/.config/meeting-note/config.toml`:
+
+```toml
+project = "your-gcp-project-id"
+location = "us-central1"
+model = "gemini-2.5-flash"
+max_output_tokens = 65536
+```
+
+See `config.example.toml` for a full example.
+
+### Environment variables
+
 Set environment variables (or create a `.env` file):
 
 ```bash

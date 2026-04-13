@@ -31,6 +31,29 @@ uv sync
 
 ## 設定
 
+meeting-note は複数の設定ソースから構成を読み込みます。優先順位は以下の通りです:
+
+1. **CLIフラグ**（最優先）
+2. **環境変数**
+3. **`.env` ファイル**（カレントディレクトリ）
+4. **TOML設定ファイル**（`~/.config/meeting-note/config.toml`）
+5. **ビルトインデフォルト**（最低優先）
+
+### 設定ファイルのセットアップ
+
+`~/.config/meeting-note/config.toml` を作成:
+
+```toml
+project = "your-gcp-project-id"
+location = "us-central1"
+model = "gemini-2.5-flash"
+max_output_tokens = 65536
+```
+
+完全な例は `config.example.toml` を参照してください。
+
+### 環境変数
+
 環境変数を設定（または `.env` ファイルを作成）:
 
 ```bash
