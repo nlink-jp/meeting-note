@@ -30,17 +30,33 @@ class TestCompleteStructured:
         assert result.count == 5
 
     @patch("meeting_note.llm.client.genai.Client")
-    def test_raises_on_truncated_json(self, mock_client_cls: MagicMock) -> None:
-        """Truncated JSON without MAX_TOKENS finish_reason should still be caught."""
+    def test_repairs_truncated_json(self, mock_client_cls: MagicMock) -> None:
+        """Repairable truncated JSON should be fixed by nlk/jsonfix."""
+        # Missing closing brace — jsonfix can repair this
         mock_response = MagicMock()
-        mock_response.text = '{"title": "truncated...'
+        mock_response.text = '{"title": "Repaired Meeting", "count": 3'
+        mock_response.candidates = [MagicMock(finish_reason="STOP")]
+        mock_client_cls.return_value.models.generate_content.return_value = mock_response
+
+        config = GeminiConfig(project="test-project")
+        client = GeminiClient(config)
+        result = client.complete_structured("system", "user", SampleSchema)
+
+        assert result.title == "Repaired Meeting"
+        assert result.count == 3
+
+    @patch("meeting_note.llm.client.genai.Client")
+    def test_raises_on_unrepairable_json(self, mock_client_cls: MagicMock) -> None:
+        """Completely broken JSON that jsonfix cannot repair should raise."""
+        mock_response = MagicMock()
+        mock_response.text = "not json at all"
         mock_response.candidates = [MagicMock(finish_reason="STOP")]
         mock_client_cls.return_value.models.generate_content.return_value = mock_response
 
         config = GeminiConfig(project="test-project")
         client = GeminiClient(config)
 
-        with pytest.raises(ValueError, match="truncated/invalid JSON"):
+        with pytest.raises(ValueError, match="could not be repaired"):
             client.complete_structured("system", "user", SampleSchema)
 
     @patch("meeting_note.llm.client.genai.Client")

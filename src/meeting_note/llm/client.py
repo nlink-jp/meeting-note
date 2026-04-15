@@ -12,6 +12,8 @@ from pydantic import BaseModel, ValidationError
 from google import genai
 from google.genai import types
 
+from nlk.jsonfix import extract as jsonfix_extract, JsonFixError
+
 from meeting_note.config import GeminiConfig
 
 logger = logging.getLogger(__name__)
@@ -54,12 +56,24 @@ class GeminiClient:
         try:
             json.loads(response)
         except json.JSONDecodeError as e:
-            raise ValueError(
-                f"Gemini returned truncated/invalid JSON ({e}). "
-                f"Response length: {len(response)} chars. "
-                f"max_output_tokens={self._config.max_output_tokens}. "
-                "Try increasing MEETING_NOTE_MAX_OUTPUT_TOKENS or splitting the input."
-            ) from e
+            # Attempt repair with nlk/jsonfix
+            logger.warning(
+                "Gemini returned malformed JSON (%s), attempting repair... "
+                "Response length: %d chars.",
+                e,
+                len(response),
+            )
+            try:
+                response = jsonfix_extract(response)
+                json.loads(response)  # verify repair succeeded
+                logger.info("JSON repair successful.")
+            except (JsonFixError, json.JSONDecodeError):
+                raise ValueError(
+                    f"Gemini returned truncated/invalid JSON that could not be repaired ({e}). "
+                    f"Response length: {len(response)} chars. "
+                    f"max_output_tokens={self._config.max_output_tokens}. "
+                    "Try increasing MEETING_NOTE_MAX_OUTPUT_TOKENS or splitting the input."
+                ) from e
         try:
             return schema.model_validate_json(response)
         except ValidationError:

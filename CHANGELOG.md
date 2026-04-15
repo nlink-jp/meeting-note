@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.2.6] - 2026-04-15
+
+### Fixed
+
+- Auto-repair truncated/malformed JSON from Gemini using nlk/jsonfix — previously
+  these errors were fatal, now the tool attempts repair before failing
+
+### Added
+
+- `nlk` (nlk-py) dependency for JSON repair (`jsonfix.extract`)
+
 ## [0.2.5] - 2026-04-14
 
 ### Added
