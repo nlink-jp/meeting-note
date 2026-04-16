@@ -94,7 +94,7 @@ class GeminiClient:
     def upload_file(self, file_path: str, *, mime_type: str = "") -> Any:
         """Upload a file for use in multimodal prompts."""
         return self._client.files.upload(
-            file_path=file_path,
+            file=file_path,
             config={"mime_type": mime_type} if mime_type else None,
         )
 
