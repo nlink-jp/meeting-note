@@ -147,10 +147,17 @@ class TestCallWithRetry:
         assert mock_client_cls.return_value.models.generate_content.call_count == 3
 
 
-class TestUploadFile:
+class TestLoadAudioPart:
     @patch("meeting_note.llm.client.genai.Client")
-    def test_upload_with_mime(self, mock_client_cls: MagicMock) -> None:
+    def test_load_audio_returns_part(self, mock_client_cls: MagicMock, tmp_path) -> None:
+        audio_file = tmp_path / "test.mp3"
+        audio_file.write_bytes(b"\x00" * 100)
+
         config = GeminiConfig(project="test-project")
         client = GeminiClient(config)
-        client.upload_file("test.mp3", mime_type="audio/mpeg")
-        mock_client_cls.return_value.files.upload.assert_called_once()
+        part = client.load_audio_part(str(audio_file), mime_type="audio/mpeg")
+
+        assert part is not None
+        assert part.inline_data is not None
+        assert part.inline_data.mime_type == "audio/mpeg"
+        assert len(part.inline_data.data) == 100

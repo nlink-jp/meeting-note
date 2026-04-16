@@ -91,20 +91,22 @@ class GeminiClient:
             user_prompt=user_prompt,
         )
 
-    def upload_file(self, file_path: str, *, mime_type: str = "") -> Any:
-        """Upload a file for use in multimodal prompts."""
-        return self._client.files.upload(
-            file=file_path,
-            config={"mime_type": mime_type} if mime_type else None,
-        )
+    def load_audio_part(self, file_path: str, *, mime_type: str) -> Any:
+        """Load an audio file as an inline Part for multimodal prompts.
 
-    def delete_file(self, file_ref: Any) -> None:
-        """Delete an uploaded file from Gemini Files API."""
-        try:
-            self._client.files.delete(name=file_ref.name)
-            logger.info("Deleted uploaded file: %s", file_ref.name)
-        except Exception as e:
-            logger.warning("Failed to delete uploaded file %s: %s", file_ref.name, e)
+        Vertex AI does not support files.upload() (Developer API only).
+        Audio data is sent inline via Part.from_bytes().
+        """
+        from pathlib import Path
+
+        data = Path(file_path).read_bytes()
+        logger.info(
+            "Loaded audio file: %s (%d bytes, %s)",
+            file_path,
+            len(data),
+            mime_type,
+        )
+        return types.Part.from_bytes(data=data, mime_type=mime_type)
 
     def _call_with_retry(
         self,

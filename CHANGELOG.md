@@ -9,8 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
-- Fix `Files.upload()` parameter name for google-genai SDK (`file_path` → `file`)
-  — audio file upload was broken
+- Fix audio file upload for Vertex AI: `files.upload()` is Developer API only,
+  replaced with `Part.from_bytes()` inline data (no server-side file cleanup needed)
 
 ## [0.2.6] - 2026-04-15
 

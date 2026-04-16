@@ -35,11 +35,11 @@ def analyze_meeting(
     user_prompt_parts: list[str] = []
     files = []
 
-    # Handle audio upload
+    # Handle audio — load as inline Part (Vertex AI does not support files.upload)
     if audio_path:
         mime_type = _detect_audio_mime(audio_path)
-        uploaded = client.upload_file(audio_path, mime_type=mime_type)
-        files.append(uploaded)
+        audio_part = client.load_audio_part(audio_path, mime_type=mime_type)
+        files.append(audio_part)
 
     # Handle transcript with sanitization
     sanitized_text: str | None = None
@@ -70,17 +70,12 @@ def analyze_meeting(
 
     user_prompt = "\n".join(user_prompt_parts)
 
-    try:
-        note = client.complete_structured(
-            system_prompt,
-            user_prompt,
-            MeetingNote,
-            files=files if files else None,
-        )
-    finally:
-        # Immediately delete uploaded files from Gemini Files API
-        for f in files:
-            client.delete_file(f)
+    note = client.complete_structured(
+        system_prompt,
+        user_prompt,
+        MeetingNote,
+        files=files if files else None,
+    )
 
     # Preserve raw transcript
     if transcript:
