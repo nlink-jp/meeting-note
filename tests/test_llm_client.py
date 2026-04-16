@@ -161,3 +161,14 @@ class TestLoadAudioPart:
         assert part.inline_data is not None
         assert part.inline_data.mime_type == "audio/mpeg"
         assert len(part.inline_data.data) == 100
+
+    @patch("meeting_note.llm.client.genai.Client")
+    def test_rejects_large_file(self, mock_client_cls: MagicMock, tmp_path) -> None:
+        audio_file = tmp_path / "large.mp3"
+        audio_file.write_bytes(b"\x00" * (16 * 1024 * 1024))  # 16 MB
+
+        config = GeminiConfig(project="test-project")
+        client = GeminiClient(config)
+
+        with pytest.raises(ValueError, match="Audio file too large"):
+            client.load_audio_part(str(audio_file), mime_type="audio/mpeg")

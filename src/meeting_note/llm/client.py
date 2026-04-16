@@ -91,19 +91,33 @@ class GeminiClient:
             user_prompt=user_prompt,
         )
 
+    # Vertex AI inline data limit (bytes)
+    _MAX_INLINE_BYTES = 15 * 1024 * 1024  # 15 MB
+
     def load_audio_part(self, file_path: str, *, mime_type: str) -> Any:
         """Load an audio file as an inline Part for multimodal prompts.
 
         Vertex AI does not support files.upload() (Developer API only).
         Audio data is sent inline via Part.from_bytes().
+        Raises ValueError if the file exceeds 15 MB.
         """
         from pathlib import Path
 
-        data = Path(file_path).read_bytes()
+        p = Path(file_path)
+        size = p.stat().st_size
+        if size > self._MAX_INLINE_BYTES:
+            size_mb = size / (1024 * 1024)
+            raise ValueError(
+                f"Audio file too large: {size_mb:.1f} MB (limit: 15 MB). "
+                f"Compress with ffmpeg before retrying:\n"
+                f"  ffmpeg -i {p.name} -b:a 64k -ar 16000 -ac 1 compressed.mp3"
+            )
+
+        data = p.read_bytes()
         logger.info(
-            "Loaded audio file: %s (%d bytes, %s)",
+            "Loaded audio file: %s (%.1f MB, %s)",
             file_path,
-            len(data),
+            size / (1024 * 1024),
             mime_type,
         )
         return types.Part.from_bytes(data=data, mime_type=mime_type)
