@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.2.7] - 2026-04-16
+
+### Fixed
+
+- Fix `Files.upload()` parameter name for google-genai SDK (`file_path` → `file`)
+  — audio file upload was broken
+
 ## [0.2.6] - 2026-04-15
 
 ### Fixed
