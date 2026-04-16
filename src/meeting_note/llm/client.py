@@ -10,6 +10,7 @@ from typing import Any, TypeVar
 from pydantic import BaseModel, ValidationError
 
 from google import genai
+from google.cloud import storage
 from google.genai import types
 
 from nlk.jsonfix import extract as jsonfix_extract, JsonFixError
@@ -91,36 +92,46 @@ class GeminiClient:
             user_prompt=user_prompt,
         )
 
-    # Vertex AI inline data limit (bytes)
-    _MAX_INLINE_BYTES = 15 * 1024 * 1024  # 15 MB
-
-    def load_audio_part(self, file_path: str, *, mime_type: str) -> Any:
-        """Load an audio file as an inline Part for multimodal prompts.
+    def upload_audio_to_gcs(
+        self, file_path: str, *, bucket: str, mime_type: str
+    ) -> tuple[Any, str]:
+        """Upload audio to GCS and return (Part, gcs_uri) for multimodal prompts.
 
         Vertex AI does not support files.upload() (Developer API only).
-        Audio data is sent inline via Part.from_bytes().
-        Raises ValueError if the file exceeds 15 MB.
+        Audio files are uploaded to GCS and referenced via Part.from_uri().
+
+        Returns:
+            (Part for contents list, GCS URI for cleanup)
         """
+        import uuid
         from pathlib import Path
 
         p = Path(file_path)
-        size = p.stat().st_size
-        if size > self._MAX_INLINE_BYTES:
-            size_mb = size / (1024 * 1024)
-            raise ValueError(
-                f"Audio file too large: {size_mb:.1f} MB (limit: 15 MB). "
-                f"Compress with ffmpeg before retrying:\n"
-                f"  ffmpeg -i {p.name} -b:a 64k -ar 16000 -ac 1 compressed.mp3"
-            )
+        blob_name = f"meeting-note/audio/{uuid.uuid4()}{p.suffix}"
+        gcs_uri = f"gs://{bucket}/{blob_name}"
 
-        data = p.read_bytes()
-        logger.info(
-            "Loaded audio file: %s (%.1f MB, %s)",
-            file_path,
-            size / (1024 * 1024),
-            mime_type,
-        )
-        return types.Part.from_bytes(data=data, mime_type=mime_type)
+        client = storage.Client(project=self._config.project)
+        blob = client.bucket(bucket).blob(blob_name)
+        blob.upload_from_filename(str(p), content_type=mime_type)
+
+        size_mb = p.stat().st_size / (1024 * 1024)
+        logger.info("Uploaded audio to GCS: %s (%.1f MB)", gcs_uri, size_mb)
+
+        part = types.Part.from_uri(file_uri=gcs_uri, mime_type=mime_type)
+        return part, gcs_uri
+
+    def delete_gcs_object(self, gcs_uri: str) -> None:
+        """Delete an object from GCS by its gs:// URI."""
+        # Parse gs://bucket/path
+        path = gcs_uri.removeprefix("gs://")
+        bucket_name, _, blob_name = path.partition("/")
+
+        try:
+            client = storage.Client(project=self._config.project)
+            client.bucket(bucket_name).blob(blob_name).delete()
+            logger.info("Deleted GCS object: %s", gcs_uri)
+        except Exception as e:
+            logger.warning("Failed to delete GCS object %s: %s", gcs_uri, e)
 
     def _call_with_retry(
         self,

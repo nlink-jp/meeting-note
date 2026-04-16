@@ -64,7 +64,12 @@ MEETING_NOTE_PROJECT=your-gcp-project-id    # Required
 MEETING_NOTE_LOCATION=us-central1           # Default
 MEETING_NOTE_MODEL=gemini-2.5-flash         # Default
 MEETING_NOTE_MAX_OUTPUT_TOKENS=65536        # Default
+MEETING_NOTE_GCS_AUDIO_BUCKET=your-bucket  # Required for audio input (-a)
 ```
+
+> **Note:** Audio input (`-a`) requires a GCS bucket for temporary file upload.
+> Text/VTT transcript-only usage does not require GCS.
+> The uploaded audio file is automatically deleted after processing.
 
 ## Usage
 

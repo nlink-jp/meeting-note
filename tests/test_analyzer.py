@@ -58,21 +58,51 @@ class TestAnalyzeMeeting:
         result = analyze_meeting(transcript="raw text", client=mock_client, config=config)
 
         mock_sanitize.assert_called_once()
-        mock_client.load_audio_part.assert_not_called()
+        mock_client.upload_audio_to_gcs.assert_not_called()
         assert result.metadata.source_transcript == "provided"
         assert result.metadata.source_audio == ""
         assert result.metadata.generated_by.startswith("meeting-note")
 
-    def test_audio_only(self) -> None:
+    def test_audio_requires_gcs_config(self) -> None:
+        mock_client = MagicMock()
+        config = GeminiConfig(project="test-project")  # no gcs_audio_bucket
+
+        with pytest.raises(ValueError, match="Audio input requires GCS configuration"):
+            analyze_meeting(audio_path="meeting.mp3", client=mock_client, config=config)
+
+    def test_audio_with_gcs(self) -> None:
         mock_client = MagicMock()
         mock_client.complete_structured.return_value = SAMPLE_LLM_RESPONSE.model_copy(deep=True)
-        mock_client.load_audio_part.return_value = MagicMock()
+        mock_client.upload_audio_to_gcs.return_value = (MagicMock(), "gs://bucket/audio/test.mp3")
 
-        config = GeminiConfig(project="test-project")
+        config = GeminiConfig(project="test-project", gcs_audio_bucket="my-bucket")
         result = analyze_meeting(audio_path="meeting.mp3", client=mock_client, config=config)
 
-        mock_client.load_audio_part.assert_called_once_with("meeting.mp3", mime_type="audio/mpeg")
+        mock_client.upload_audio_to_gcs.assert_called_once_with(
+            "meeting.mp3", bucket="my-bucket", mime_type="audio/mpeg"
+        )
         assert result.metadata.source_audio == "meeting.mp3"
+
+    def test_gcs_cleanup_after_success(self) -> None:
+        mock_client = MagicMock()
+        mock_client.complete_structured.return_value = SAMPLE_LLM_RESPONSE.model_copy(deep=True)
+        mock_client.upload_audio_to_gcs.return_value = (MagicMock(), "gs://bucket/audio/test.mp3")
+
+        config = GeminiConfig(project="test-project", gcs_audio_bucket="my-bucket")
+        analyze_meeting(audio_path="meeting.mp3", client=mock_client, config=config)
+
+        mock_client.delete_gcs_object.assert_called_once_with("gs://bucket/audio/test.mp3")
+
+    def test_gcs_cleanup_after_error(self) -> None:
+        mock_client = MagicMock()
+        mock_client.complete_structured.side_effect = Exception("LLM error")
+        mock_client.upload_audio_to_gcs.return_value = (MagicMock(), "gs://bucket/audio/test.mp3")
+
+        config = GeminiConfig(project="test-project", gcs_audio_bucket="my-bucket")
+        with pytest.raises(Exception, match="LLM error"):
+            analyze_meeting(audio_path="meeting.mp3", client=mock_client, config=config)
+
+        mock_client.delete_gcs_object.assert_called_once_with("gs://bucket/audio/test.mp3")
 
     @patch("meeting_note.ingest.analyzer.sanitize_for_llm")
     def test_both_inputs(self, mock_sanitize: MagicMock) -> None:
@@ -80,15 +110,15 @@ class TestAnalyzeMeeting:
 
         mock_client = MagicMock()
         mock_client.complete_structured.return_value = SAMPLE_LLM_RESPONSE.model_copy(deep=True)
-        mock_client.load_audio_part.return_value = MagicMock()
+        mock_client.upload_audio_to_gcs.return_value = (MagicMock(), "gs://bucket/audio/test.mp3")
 
-        config = GeminiConfig(project="test-project")
+        config = GeminiConfig(project="test-project", gcs_audio_bucket="my-bucket")
         result = analyze_meeting(
             transcript="raw text", audio_path="meeting.mp3", client=mock_client, config=config
         )
 
         mock_sanitize.assert_called_once()
-        mock_client.load_audio_part.assert_called_once()
+        mock_client.upload_audio_to_gcs.assert_called_once()
         assert result.metadata.source_audio == "meeting.mp3"
         assert result.metadata.source_transcript == "provided"
 
@@ -130,3 +160,12 @@ class TestAnalyzeMeeting:
         call_args = mock_client.complete_structured.call_args
         user_prompt = call_args.args[1]
         assert "Known participants" not in user_prompt
+
+    def test_no_gcs_cleanup_when_no_audio(self) -> None:
+        mock_client = MagicMock()
+        mock_client.complete_structured.return_value = SAMPLE_LLM_RESPONSE.model_copy(deep=True)
+
+        config = GeminiConfig(project="test-project")
+        analyze_meeting(transcript="text", client=mock_client, config=config)
+
+        mock_client.delete_gcs_object.assert_not_called()

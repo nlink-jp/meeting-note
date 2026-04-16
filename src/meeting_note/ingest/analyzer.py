@@ -30,15 +30,27 @@ def analyze_meeting(
     config: GeminiConfig,
 ) -> MeetingNote:
     """Extract structured meeting data from audio and/or transcript via Gemini."""
+    if audio_path and not config.gcs_audio_bucket:
+        raise ValueError(
+            "Audio input requires GCS configuration. "
+            "Set gcs_audio_bucket in ~/.config/meeting-note/config.toml:\n\n"
+            "  [gcs]\n"
+            "  audio_bucket = \"your-bucket-name\"\n\n"
+            "Or set MEETING_NOTE_GCS_AUDIO_BUCKET environment variable."
+        )
+
     nonce = generate_nonce()
     system_prompt = _build_system_prompt(nonce)
     user_prompt_parts: list[str] = []
     files = []
+    gcs_uri: str | None = None
 
-    # Handle audio — load as inline Part (Vertex AI does not support files.upload)
+    # Handle audio — upload to GCS, reference via Part.from_uri
     if audio_path:
         mime_type = _detect_audio_mime(audio_path)
-        audio_part = client.load_audio_part(audio_path, mime_type=mime_type)
+        audio_part, gcs_uri = client.upload_audio_to_gcs(
+            audio_path, bucket=config.gcs_audio_bucket, mime_type=mime_type
+        )
         files.append(audio_part)
 
     # Handle transcript with sanitization
@@ -70,12 +82,17 @@ def analyze_meeting(
 
     user_prompt = "\n".join(user_prompt_parts)
 
-    note = client.complete_structured(
-        system_prompt,
-        user_prompt,
-        MeetingNote,
-        files=files if files else None,
-    )
+    try:
+        note = client.complete_structured(
+            system_prompt,
+            user_prompt,
+            MeetingNote,
+            files=files if files else None,
+        )
+    finally:
+        # Clean up GCS temporary file
+        if gcs_uri:
+            client.delete_gcs_object(gcs_uri)
 
     # Preserve raw transcript
     if transcript:

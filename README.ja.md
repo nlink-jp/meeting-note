@@ -61,7 +61,12 @@ MEETING_NOTE_PROJECT=your-gcp-project-id    # 必須
 MEETING_NOTE_LOCATION=us-central1           # デフォルト
 MEETING_NOTE_MODEL=gemini-2.5-flash         # デフォルト
 MEETING_NOTE_MAX_OUTPUT_TOKENS=65536        # デフォルト
+MEETING_NOTE_GCS_AUDIO_BUCKET=your-bucket  # 音声入力(-a)に必須
 ```
+
+> **注意:** 音声入力（`-a`）にはGCSバケットの設定が必要です。
+> テキスト/VTTトランスクリプトのみの場合はGCS不要です。
+> アップロードされた音声ファイルは処理後に自動削除されます。
 
 ## 使い方
 

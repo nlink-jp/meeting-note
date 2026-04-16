@@ -5,17 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.3.1] - 2026-04-16
+
+### Changed
+
+- Audio upload switched from inline `Part.from_bytes()` to GCS upload +
+  `Part.from_uri()` — eliminates 429 rate limit errors for large audio
+- Requires `gcs_audio_bucket` config for audio input; text/VTT-only usage
+  is unchanged
+- GCS objects are auto-deleted after processing (success or failure)
+- Added `google-cloud-storage` dependency
+
+### Config
+
+Audio input now requires GCS bucket configuration:
+
+```toml
+# ~/.config/meeting-note/config.toml
+[gcs]
+audio_bucket = "your-bucket-name"
+```
+
+Or environment variable: `MEETING_NOTE_GCS_AUDIO_BUCKET`
+
 ## [0.3.0] - 2026-04-16
 
 ### Added
 
-- Audio file size check: reject files over 15 MB (Vertex AI inline limit)
-  with ffmpeg compression command in error message
+- (superseded by v0.3.1 — inline 15 MB limit was insufficient)
 
 ### Changed
 
 - Increase API retry for large audio files: 5 retries with 5s base delay
-  (5s → 10s → 20s → 40s → 80s, ~155s total backoff)
 
 ## [0.2.9] - 2026-04-16
 

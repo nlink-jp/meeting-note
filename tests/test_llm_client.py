@@ -147,28 +147,30 @@ class TestCallWithRetry:
         assert mock_client_cls.return_value.models.generate_content.call_count == 3
 
 
-class TestLoadAudioPart:
+class TestUploadAudioToGCS:
+    @patch("meeting_note.llm.client.storage")
     @patch("meeting_note.llm.client.genai.Client")
-    def test_load_audio_returns_part(self, mock_client_cls: MagicMock, tmp_path) -> None:
+    def test_uploads_and_returns_part(self, mock_genai_cls: MagicMock, mock_storage: MagicMock, tmp_path) -> None:
         audio_file = tmp_path / "test.mp3"
         audio_file.write_bytes(b"\x00" * 100)
 
         config = GeminiConfig(project="test-project")
         client = GeminiClient(config)
-        part = client.load_audio_part(str(audio_file), mime_type="audio/mpeg")
+        part, gcs_uri = client.upload_audio_to_gcs(
+            str(audio_file), bucket="my-bucket", mime_type="audio/mpeg"
+        )
 
         assert part is not None
-        assert part.inline_data is not None
-        assert part.inline_data.mime_type == "audio/mpeg"
-        assert len(part.inline_data.data) == 100
+        assert gcs_uri.startswith("gs://my-bucket/meeting-note/audio/")
+        assert gcs_uri.endswith(".mp3")
+        mock_storage.Client.return_value.bucket.return_value.blob.return_value.upload_from_filename.assert_called_once()
 
+    @patch("meeting_note.llm.client.storage")
     @patch("meeting_note.llm.client.genai.Client")
-    def test_rejects_large_file(self, mock_client_cls: MagicMock, tmp_path) -> None:
-        audio_file = tmp_path / "large.mp3"
-        audio_file.write_bytes(b"\x00" * (16 * 1024 * 1024))  # 16 MB
-
+    def test_delete_gcs_object(self, mock_genai_cls: MagicMock, mock_storage: MagicMock) -> None:
         config = GeminiConfig(project="test-project")
         client = GeminiClient(config)
+        client.delete_gcs_object("gs://my-bucket/meeting-note/audio/test.mp3")
 
-        with pytest.raises(ValueError, match="Audio file too large"):
-            client.load_audio_part(str(audio_file), mime_type="audio/mpeg")
+        mock_storage.Client.return_value.bucket.assert_called_with("my-bucket")
+        mock_storage.Client.return_value.bucket.return_value.blob.assert_called_with("meeting-note/audio/test.mp3")
