@@ -116,8 +116,8 @@ class GeminiClient:
         files: list[Any] | None = None,
         response_mime_type: str | None = None,
         response_schema: type[BaseModel] | None = None,
-        max_retries: int = 3,
-        base_delay: float = 2.0,
+        max_retries: int = 5,
+        base_delay: float = 5.0,
     ) -> str:
         """Call Gemini API with exponential backoff on rate limit errors."""
         config = types.GenerateContentConfig(
