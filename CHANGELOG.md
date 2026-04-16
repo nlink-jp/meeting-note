@@ -5,12 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [0.2.7] - 2026-04-16
+## [0.2.8] - 2026-04-16
 
 ### Fixed
 
 - Fix audio file upload for Vertex AI: `files.upload()` is Developer API only,
   replaced with `Part.from_bytes()` inline data (no server-side file cleanup needed)
+
+## [0.2.7] - 2026-04-16
+
+### Fixed
+
+- (incomplete fix — superseded by v0.2.8)
 
 ## [0.2.6] - 2026-04-15
 
