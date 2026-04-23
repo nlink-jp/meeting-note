@@ -32,7 +32,8 @@ def main() -> None:
 @click.option("--location", default="", help="GCP location (overrides env)")
 @click.option("--model", default="", help="Gemini model name (overrides env)")
 @click.option("--known-participants", "-p", default="", help="Comma-separated participant names as hints (e.g. 'Tanaka,Sato,Suzuki')")
-def ingest(audio: str | None, transcript: str | None, output: str, project: str, location: str, model: str, known_participants: str) -> None:
+@click.option("--lang", "-l", default="", help="Output language (e.g. 'ja', 'en'). Auto-detected from input if omitted")
+def ingest(audio: str | None, transcript: str | None, output: str, project: str, location: str, model: str, known_participants: str, lang: str) -> None:
     """Extract structured meeting data from audio and/or transcript."""
     if not audio and not transcript:
         raise click.UsageError("At least one of --audio or --transcript is required.")
@@ -61,6 +62,7 @@ def ingest(audio: str | None, transcript: str | None, output: str, project: str,
             transcript=transcript_text,
             audio_path=audio,
             known_participants=participants,
+            lang=lang or None,
             client=client,
             config=config,
         )

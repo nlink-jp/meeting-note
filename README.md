@@ -87,6 +87,9 @@ meeting-note ingest -t transcript.txt -o meeting.json
 
 # With speaker hints (helps identify speakers in unlabeled transcripts)
 meeting-note ingest -t transcript.txt -p 'Tanaka,Sato,Suzuki' -o meeting.json
+
+# Specify output language (auto-detected from input if omitted)
+meeting-note ingest -t transcript.txt --lang ja -o meeting.json
 ```
 
 ### Compile into a document

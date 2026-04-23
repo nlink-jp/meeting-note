@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from meeting_note.config import GeminiConfig
-from meeting_note.ingest.analyzer import _build_system_prompt, _detect_audio_mime, analyze_meeting
+from meeting_note.ingest.analyzer import _build_system_prompt, _detect_audio_mime, analyze_meeting, detect_language
 from meeting_note.models import MeetingNote
 
 
@@ -13,6 +13,26 @@ SAMPLE_LLM_RESPONSE = MeetingNote(
     title="Test Meeting",
     date="2026-04-07T10:00:00+09:00",
 )
+
+
+class TestDetectLanguage:
+    def test_japanese_hiragana(self) -> None:
+        assert detect_language("これはテストです") == "ja"
+
+    def test_japanese_katakana(self) -> None:
+        assert detect_language("テスト") == "ja"
+
+    def test_japanese_kanji(self) -> None:
+        assert detect_language("会議の議事録") == "ja"
+
+    def test_english(self) -> None:
+        assert detect_language("This is a test") == "en"
+
+    def test_mixed_defaults_to_ja(self) -> None:
+        assert detect_language("Meeting about デプロイ pipeline") == "ja"
+
+    def test_empty_string(self) -> None:
+        assert detect_language("") == "en"
 
 
 class TestBuildSystemPrompt:
@@ -29,6 +49,20 @@ class TestBuildSystemPrompt:
         assert "Participants" in prompt
         assert "Agenda items" in prompt
         assert "WHY" in prompt
+
+    def test_lang_japanese(self) -> None:
+        prompt = _build_system_prompt("abc123", lang="ja")
+        assert "Japanese" in prompt
+        assert "Output language: Japanese" in prompt
+
+    def test_lang_english(self) -> None:
+        prompt = _build_system_prompt("abc123", lang="en")
+        assert "English" in prompt
+        assert "Output language: English" in prompt
+
+    def test_default_lang_is_english(self) -> None:
+        prompt = _build_system_prompt("abc123")
+        assert "Output language: English" in prompt
 
 
 class TestDetectAudioMime:
@@ -169,3 +203,33 @@ class TestAnalyzeMeeting:
         analyze_meeting(transcript="text", client=mock_client, config=config)
 
         mock_client.delete_gcs_object.assert_not_called()
+
+    def test_explicit_lang_in_prompt(self) -> None:
+        mock_client = MagicMock()
+        mock_client.complete_structured.return_value = SAMPLE_LLM_RESPONSE.model_copy(deep=True)
+
+        config = GeminiConfig(project="test-project")
+        analyze_meeting(transcript="some text", lang="ja", client=mock_client, config=config)
+
+        system_prompt = mock_client.complete_structured.call_args.args[0]
+        assert "Output language: Japanese" in system_prompt
+
+    def test_auto_detect_japanese(self) -> None:
+        mock_client = MagicMock()
+        mock_client.complete_structured.return_value = SAMPLE_LLM_RESPONSE.model_copy(deep=True)
+
+        config = GeminiConfig(project="test-project")
+        analyze_meeting(transcript="本日の会議について", client=mock_client, config=config)
+
+        system_prompt = mock_client.complete_structured.call_args.args[0]
+        assert "Output language: Japanese" in system_prompt
+
+    def test_auto_detect_english(self) -> None:
+        mock_client = MagicMock()
+        mock_client.complete_structured.return_value = SAMPLE_LLM_RESPONSE.model_copy(deep=True)
+
+        config = GeminiConfig(project="test-project")
+        analyze_meeting(transcript="Today we discussed the sprint", client=mock_client, config=config)
+
+        system_prompt = mock_client.complete_structured.call_args.args[0]
+        assert "Output language: English" in system_prompt

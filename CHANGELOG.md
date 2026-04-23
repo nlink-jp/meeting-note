@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.4.0] - 2026-04-23
+
+### Added
+
+- `--lang / -l` option for `ingest` command — explicitly specify output language
+  (e.g. `--lang ja`, `--lang en`)
+- Automatic language detection from input text when `--lang` is omitted —
+  detects Japanese (hiragana/katakana/kanji) and defaults to English otherwise
+- Explicit `Output language:` directive in system prompt for reliable language
+  control — replaces the previous heuristic "same language as input" instruction
+
+### Fixed
+
+- Non-deterministic output language: Japanese input sometimes produced English
+  output despite CRITICAL LANGUAGE RULE in the prompt — now resolved by
+  programmatic detection and explicit language directive
+
 ## [0.3.1] - 2026-04-16
 
 ### Changed
