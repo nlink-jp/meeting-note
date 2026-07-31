@@ -1,5 +1,12 @@
 # meeting-note
 
+> **アーカイブ済み** — 後継は Claude Code Skill の
+> [meeting-notes](https://github.com/nlink-jp/meeting-notes) です。JSON
+> フォーマットは同一（既存レコードはそのままコンパイル可能）ですが、本ツールで
+> 生成失敗が頻発した根本原因である「単一の大きな LLM 呼び出し」をやめ、
+> 検証付きの小さな断片ごとに抽出します。音声入力は上流の
+> [gem-transcribe](https://github.com/nlink-jp/gem-transcribe) が担います。
+
 会議議事録構造化ツール — 音声録音や会議ツールの文字起こしから Vertex AI Gemini で
 構造化データを抽出し、Markdown や HTML にコンパイルします。
 

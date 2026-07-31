@@ -1,5 +1,13 @@
 # meeting-note
 
+> **Archived** — superseded by the
+> [meeting-notes](https://github.com/nlink-jp/meeting-notes) Claude Code
+> Skill, which uses the same JSON format (existing records compile as-is)
+> but extracts in validated small pieces instead of one large LLM call —
+> the root cause of this tool's frequent generation failures. Audio input
+> is handled upstream by
+> [gem-transcribe](https://github.com/nlink-jp/gem-transcribe).
+
 Meeting minutes structuring tool — extract structured data from audio recordings
 and meeting transcripts via Vertex AI Gemini, then compile into Markdown or HTML.
 
